@@ -30,6 +30,33 @@ export default function AddProductModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Upload image to Cloudinary
+  const uploadToCloudinary = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append(
+      "upload_preset",
+      process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+    );
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Image upload failed");
+    }
+
+    return res.json();
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -39,10 +66,32 @@ export default function AddProductModal({
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const price = formData.get("price") as string;
-    const imageUrl = formData.get("imageUrl") as string;
 
     try {
+      let uploadedImage: { secure_url: string; public_id: string } | null =
+        null;
+
+      if (imageFile) {
+        uploadedImage = await uploadToCloudinary(imageFile);
+      }
+
       const token = await getToken();
+
+      // Send as images array
+      const payload = {
+        storeId,
+        name,
+        description: description || undefined,
+        price: parseFloat(price),
+        images: uploadedImage
+          ? [
+              {
+                url: uploadedImage.secure_url,
+                publicId: uploadedImage.public_id,
+              },
+            ]
+          : [],
+      };
 
       const response = await fetch("http://localhost:3000/api/items", {
         method: "POST",
@@ -50,13 +99,7 @@ export default function AddProductModal({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          storeId,
-          name,
-          description: description || undefined,
-          price: parseFloat(price),
-          imageUrl: imageUrl || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -64,12 +107,14 @@ export default function AddProductModal({
         throw new Error(errorData.error || "Failed to add product");
       }
 
-      // Success - close modal and refresh products
+      // Success
       onOpenChange(false);
       onProductAdded();
 
-      // Reset form
+      // Reset form + image state
       (e.target as HTMLFormElement).reset();
+      setImageFile(null);
+      setImagePreview(null);
     } catch (err: any) {
       console.error("Error adding product:", err);
       setError(err.message || "Failed to add product");
@@ -96,6 +141,7 @@ export default function AddProductModal({
               )}
 
               <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                {/* Product Name */}
                 <TextField
                   isRequired
                   name="name"
@@ -117,6 +163,7 @@ export default function AddProductModal({
                   <FieldError />
                 </TextField>
 
+                {/* Description */}
                 <TextField name="description">
                   <Label>Description (Optional)</Label>
                   <Input placeholder="Describe your product..." />
@@ -126,21 +173,16 @@ export default function AddProductModal({
                   <FieldError />
                 </TextField>
 
+                {/* Price */}
                 <TextField
                   isRequired
                   name="price"
                   type="number"
                   validate={(value) => {
                     const price = parseFloat(value);
-                    if (isNaN(price)) {
-                      return "Price must be a valid number";
-                    }
-                    if (price <= 0) {
-                      return "Price must be greater than 0";
-                    }
-                    if (price > 999999.99) {
-                      return "Price is too high";
-                    }
+                    if (isNaN(price)) return "Price must be a valid number";
+                    if (price <= 0) return "Price must be greater than 0";
+                    if (price > 999999.99) return "Price is too high";
                     return null;
                   }}
                 >
@@ -150,29 +192,30 @@ export default function AddProductModal({
                   <FieldError />
                 </TextField>
 
-                <TextField
-                  name="imageUrl"
-                  type="url"
-                  validate={(value) => {
-                    if (value && value.trim().length > 0) {
-                      try {
-                        new URL(value);
-                        return null;
-                      } catch {
-                        return "Please enter a valid URL";
-                      }
-                    }
-                    return null;
-                  }}
-                >
-                  <Label>Image URL (Optional)</Label>
-                  <Input placeholder="https://example.com/image.jpg" />
-                  <Description>
-                    Link to an image of your product
-                  </Description>
-                  <FieldError />
-                </TextField>
+                {/* Image Upload */}
+                <div className="flex flex-col gap-2">
+                  <Label>Product Image</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }}
+                  />
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="mt-2 h-32 w-32 object-cover rounded-md border"
+                    />
+                  )}
+                  <Description>JPG, PNG, or WebP. Max 5MB.</Description>
+                </div>
 
+                {/* Actions */}
                 <div className="flex gap-3 mt-2">
                   <Button
                     type="button"

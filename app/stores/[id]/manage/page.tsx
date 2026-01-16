@@ -16,12 +16,18 @@ interface Store {
   isActive: boolean;
 }
 
+interface ItemImage {
+  url: string;
+  publicId: string;
+  position?: number;
+}
+
 interface Item {
   id: string;
   name: string;
   description: string | null;
   price: number;
-  imageUrl: string | null;
+  images: ItemImage[];
   isActive: boolean;
   createdAt: string;
 }
@@ -238,12 +244,12 @@ export default function ManageStorePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {items.map((item) => (
                 <Card key={item.id} className="overflow-hidden">
-                  {item.imageUrl ? (
+                  {item.images.length > 0 && item.images[0]?.url ? (
                     <div className="w-full h-48 bg-gray-200">
                       <img
-                        src={item.imageUrl}
+                        src={item.images[0].url}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   ) : (
