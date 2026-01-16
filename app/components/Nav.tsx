@@ -24,14 +24,7 @@ export default function Nav() {
             MyApp
           </Link>
 
-          {/* Desktop links */}
           <div className="hidden md:flex md:items-center md:gap-6">
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-gray-700 hover:text-black"
-            >
-              Dashboard
-            </Link>
             {user && (
               <Link
                 href="/stores"
@@ -40,14 +33,7 @@ export default function Nav() {
                 My Stores
               </Link>
             )}
-            <Link
-              href="/settings"
-              className="text-sm font-medium text-gray-700 hover:text-black"
-            >
-              Settings
-            </Link>
           </div>
-
           {/* Right side */}
           <div className="hidden md:flex md:items-center md:gap-3">
             {isSignedIn ? (

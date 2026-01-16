@@ -184,7 +184,7 @@ export default function StoresPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link href={`/stores/${store.id}/edit`} className="flex-1">
+                  <Link href={`/stores/${store.id}/manage`} className="flex-1">
                     <Button variant="secondary" className="w-full">
                       Manage
                     </Button>
