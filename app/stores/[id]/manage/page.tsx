@@ -7,6 +7,7 @@ import { Button, Card, Spinner } from "@heroui/react";
 import { IoAdd, IoArrowBack, IoCopy, IoCheckmark } from "react-icons/io5";
 import Link from "next/link";
 import AddProductModal from "@/app/components/AddProductModal";
+import { itemsApi } from "@/lib/services/api";
 
 interface Store {
   id: string;
@@ -92,21 +93,11 @@ export default function ManageStorePage() {
     try {
       setIsLoadingItems(true);
       const token = await getToken();
-
-      const response = await fetch(
-        `http://localhost:3000/api/items/store/${store.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch items");
+      if (!token) {
+        throw new Error("Not authenticated");
       }
 
-      const data = await response.json();
+      const data = await itemsApi.getByStoreId(token, store.id);
       setItems(data);
     } catch (err) {
       console.error("Error fetching items:", err);
