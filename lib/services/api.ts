@@ -79,3 +79,18 @@ export const usersApi = {
     return response.json();
   },
 };
+
+export const stripeApi = {
+  createCheckoutSession: async (itemId: string, buyerEmail: string) => {
+    const response = await fetch(`${API_URL}/stripe/checkout`, {
+      method: 'POST',
+      headers: await getHeaders(),
+      body: JSON.stringify({ itemId, buyerEmail }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create checkout session');
+    }
+    return response.json();
+  },
+};

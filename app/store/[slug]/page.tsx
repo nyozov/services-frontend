@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, Spinner, Button } from "@heroui/react";
 import { IoStorefront, IoCartOutline } from "react-icons/io5";
+import CheckoutModal from "@/app/components/CheckoutModal";
 
 interface Store {
   id: string;
@@ -23,7 +24,6 @@ interface Item {
   description: string | null;
   price: number;
   images: Array<{
-    // Add this
     id: string;
     url: string;
     publicId: string;
@@ -42,6 +42,10 @@ export default function PublicStorePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Checkout modal state
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   useEffect(() => {
     fetchStore();
@@ -62,7 +66,6 @@ export default function PublicStorePage() {
       const data = await response.json();
       setStore(data);
 
-      // Fetch items after getting store
       if (data && data.isActive) {
         fetchItems();
       }
@@ -91,6 +94,11 @@ export default function PublicStorePage() {
     } finally {
       setIsLoadingItems(false);
     }
+  };
+
+  const handleBuyClick = (item: Item) => {
+    setSelectedItem(item);
+    setIsCheckoutOpen(true);
   };
 
   if (isLoading) {
@@ -175,16 +183,13 @@ export default function PublicStorePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
-              <Card
-                key={item.id}
-                className="overflow-hidden"
-              >
+              <Card key={item.id} className="overflow-hidden hover:shadow-xl transition-shadow">
                 {item.images && item.images.length > 0 ? (
                   <div className="w-full h-56 bg-gray-200">
                     <img
                       src={item.images[0].url}
                       alt={item.name}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 ) : (
@@ -208,7 +213,12 @@ export default function PublicStorePage() {
                     ${Number(item.price).toFixed(2)}
                   </p>
 
-                  <Button variant="primary" className="w-full gap-2" size="lg">
+                  <Button
+                    variant="primary"
+                    className="w-full gap-2"
+                    size="lg"
+                    onPress={() => handleBuyClick(item)}
+                  >
                     <IoCartOutline size={20} />
                     Buy Now
                   </Button>
@@ -218,6 +228,17 @@ export default function PublicStorePage() {
           </div>
         )}
       </div>
+
+      {/* Checkout Modal */}
+      {selectedItem && (
+        <CheckoutModal
+          itemId={selectedItem.id}
+          itemName={selectedItem.name}
+          itemPrice={Number(selectedItem.price)}
+          isOpen={isCheckoutOpen}
+          onOpenChange={setIsCheckoutOpen}
+        />
+      )}
     </div>
   );
 }

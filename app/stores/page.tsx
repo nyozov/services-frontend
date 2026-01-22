@@ -38,6 +38,7 @@ export default function StoresPage() {
     try {
       setIsLoading(true);
       const token = await getToken();
+      
 
       const response = await fetch("http://localhost:3000/api/stores", {
         headers: {
