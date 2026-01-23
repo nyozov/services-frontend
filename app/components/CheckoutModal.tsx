@@ -32,7 +32,7 @@ export default function CheckoutModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { user } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -89,7 +89,7 @@ export default function CheckoutModal({
               </div>
 
               <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                {!user && (
+                {!isSignedIn || !isLoaded && (
                   <TextField
                     isRequired
                     name="email"

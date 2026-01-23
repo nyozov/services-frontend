@@ -17,23 +17,13 @@ export default function Nav() {
 
   return (
     <nav className="border-b border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="text-lg font-semibold">
             MyApp
           </Link>
 
-          <div className="hidden md:flex md:items-center md:gap-6">
-            {user && (
-              <Link
-                href="/stores"
-                className="text-sm font-medium text-gray-700 hover:text-black"
-              >
-                My Stores
-              </Link>
-            )}
-          </div>
           {/* Right side */}
           <div className="hidden md:flex md:items-center md:gap-3">
             {isSignedIn ? (

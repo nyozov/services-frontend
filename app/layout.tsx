@@ -5,6 +5,7 @@ import {
 } from '@clerk/nextjs'
 import Nav from "./components/Nav";
 import "./globals.css";
+import Sidebar from "./components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,12 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <Nav/>
-          {children}
+          <div className="flex">
+            <Sidebar/>
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
         </body>
       </html>
     </ClerkProvider>
