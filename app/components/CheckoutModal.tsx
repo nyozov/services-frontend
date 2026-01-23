@@ -89,7 +89,7 @@ export default function CheckoutModal({
               </div>
 
               <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                {!isSignedIn || !isLoaded && (
+                {!isSignedIn && (
                   <TextField
                     isRequired
                     name="email"

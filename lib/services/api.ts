@@ -93,4 +93,16 @@ export const stripeApi = {
     }
     return response.json();
   },
+
+  verifySession: async (sessionId: string) => {
+    const response = await fetch(`${API_URL}/stripe/verify-session/${sessionId}`, {
+      method: 'GET',
+      headers: await getHeaders(),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to verify session');
+    }
+    return response.json();
+  },
 };
