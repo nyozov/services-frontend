@@ -8,6 +8,7 @@ import {
   IoStorefront,
   IoCheckmark,
   IoCopy,
+  IoWarning,
 } from "react-icons/io5";
 import Link from "next/link";
 import CreateStoreModal from "@/app/components/CreateStoreModal";
@@ -29,16 +30,18 @@ export default function StoresPage() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [paymentSetupNeeded, setPaymentSetupNeeded] = useState(false);
+  const [isSettingUpPayments, setIsSettingUpPayments] = useState(false);
 
   useEffect(() => {
     fetchStores();
+    checkPaymentSetup();
   }, []);
 
   const fetchStores = async () => {
     try {
       setIsLoading(true);
       const token = await getToken();
-      
 
       const response = await fetch("http://localhost:3000/api/stores", {
         headers: {
@@ -56,6 +59,52 @@ export default function StoresPage() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkPaymentSetup = async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const response = await fetch(
+        "http://localhost:3000/api/stripe/connect/status",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentSetupNeeded(!data.onboardingComplete);
+      }
+    } catch (err) {
+      console.error("Error checking payment setup:", err);
+    }
+  };
+
+  const handleEnablePayments = async () => {
+    try {
+      setIsSettingUpPayments(true);
+      const token = await getToken();
+      if (!token) return;
+
+      const response = await fetch(
+        "http://localhost:3000/api/stripe/connect/onboard",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (err) {
+      console.error("Error starting onboarding:", err);
+      setIsSettingUpPayments(false);
     }
   };
 
@@ -88,10 +137,40 @@ export default function StoresPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Payment Setup Banner */}
+        {paymentSetupNeeded && stores.length > 0 && (
+          <Card className="mb-8 p-6 bg-yellow-50 border border-yellow-200">
+            <div className="flex items-start gap-4">
+              <IoWarning size={32} className="text-yellow-600 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Enable Payments to Start Selling
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Set up your payment account to receive money from sales. Takes
+                  about 5 minutes. Your stores are visible but customers can't
+                  purchase yet.
+                </p>
+                <Button
+                  variant="primary"
+                  onPress={handleEnablePayments}
+                  isDisabled={isSettingUpPayments}
+                >
+                  {isSettingUpPayments
+                    ? "Redirecting..."
+                    : "Enable Payments Now"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Stores</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              My Stores
+            </h1>
             <p className="text-gray-600">
               Manage your online storefronts and products
             </p>
