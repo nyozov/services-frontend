@@ -1,23 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { Button, Avatar, Description, Label, Dropdown } from "@heroui/react";
-import AuthModal from "./AuthModal";
 import Notifications from "./NotificationDropdown";
+import { useRouter } from "next/navigation";
 
 export default function Nav() {
-  const [open, setOpen] = useState(false);
   const { isSignedIn, isLoaded, user } = useUser();
   const { signOut } = useClerk();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   return (
-    <nav className="border-b border-gray-200 bg-white">
+    <nav className="">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -68,7 +67,9 @@ export default function Nav() {
                 </Dropdown>
               </div>
             ) : (
-              <AuthModal />
+              <Button variant="primary" onPress={() => router.push("/sign-in")}>
+                Sign in
+              </Button>
             )}
           </div>
         </div>
