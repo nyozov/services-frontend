@@ -1,6 +1,11 @@
 import { Button, Card } from "@heroui/react";
 import Link from "next/link";
-import { IoStorefrontOutline, IoRocketOutline, IoShieldCheckmarkOutline, IoTrendingUpOutline } from "react-icons/io5";
+import {
+  IoStorefrontOutline,
+  IoRocketOutline,
+  IoShieldCheckmarkOutline,
+  IoTrendingUpOutline,
+} from "react-icons/io5";
 
 export default function Home() {
   return (
@@ -10,8 +15,6 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 items-center">
           {/* Left content */}
           <div className="space-y-8">
-          
-
             <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-gray-900 lg:text-6xl">
               Sell anything,
               <br />
@@ -21,8 +24,8 @@ export default function Home() {
             </h1>
 
             <p className="text-xl text-gray-600 leading-relaxed">
-              The simplest way to create your online store. No technical skills required. 
-              Start selling in minutes, not days.
+              The simplest way to create your online store. No technical skills
+              required. Start selling in minutes, not days.
             </p>
 
             {/* Features Grid */}
@@ -32,7 +35,9 @@ export default function Home() {
                   <IoStorefrontOutline className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Build in minutes</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    Build in minutes
+                  </h3>
                   <p className="text-sm text-gray-600">Simple setup process</p>
                 </div>
               </div>
@@ -42,7 +47,9 @@ export default function Home() {
                   <IoRocketOutline className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Share instantly</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    Share instantly
+                  </h3>
                   <p className="text-sm text-gray-600">One link to sell</p>
                 </div>
               </div>
@@ -52,7 +59,9 @@ export default function Home() {
                   <IoShieldCheckmarkOutline className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Secure payments</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    Secure payments
+                  </h3>
                   <p className="text-sm text-gray-600">Powered by Stripe</p>
                 </div>
               </div>
@@ -71,19 +80,14 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link href="/stores">
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   size="lg"
                   className="w-full sm:w-auto text-lg px-8 py-6 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-shadow"
                 >
                   Start Selling Free →
                 </Button>
               </Link>
-              <div className="text-sm text-gray-500 sm:ml-2">
-                <span className="font-semibold text-gray-700">Join 1,000+ sellers</span>
-                <br />
-                No credit card required
-              </div>
             </div>
           </div>
 
@@ -93,7 +97,7 @@ export default function Home() {
             <div className="relative aspect-square w-full">
               {/* Background gradient blob */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-3xl blur-3xl"></div>
-              
+
               {/* Main store card */}
               <Card className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 p-6 shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform">
                 <div className="space-y-4">
@@ -133,14 +137,14 @@ export default function Home() {
               <Card className="absolute bottom-8 -left-4 w-40 p-3 shadow-lg">
                 <div className="text-xs text-gray-500 mb-1">Total Sales</div>
                 <div className="text-2xl font-bold text-gray-900">$2,847</div>
-                <div className="text-xs text-green-600 mt-1">↑ 12% this week</div>
+                <div className="text-xs text-green-600 mt-1">
+                  ↑ 12% this week
+                </div>
               </Card>
             </div>
           </div>
         </div>
       </main>
-
-    
 
       {/* Features Section */}
       <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
@@ -174,7 +178,8 @@ export default function Home() {
               Secure Checkout
             </h3>
             <p className="text-gray-600">
-              Enterprise-grade security powered by Stripe. Your customers are protected.
+              Enterprise-grade security powered by Stripe. Your customers are
+              protected.
             </p>
           </Card>
 
@@ -204,7 +209,7 @@ export default function Home() {
           <div className="text-6xl font-bold mb-4">5%</div>
           <p className="text-xl mb-8">per transaction + Stripe fees</p>
           <Link href="/stores">
-            <Button 
+            <Button
               variant="secondary"
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6"
@@ -224,8 +229,8 @@ export default function Home() {
           Join thousands of sellers who've made their first sale with us.
         </p>
         <Link href="/stores">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             size="lg"
             className="text-lg px-8 py-6 shadow-lg shadow-blue-500/30"
           >

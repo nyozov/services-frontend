@@ -55,6 +55,30 @@ export default function Nav() {
                   <Dropdown.Popover>
                     <Dropdown.Menu>
                       <Dropdown.Item
+                        onPress={() => router.push("/dashboard")}
+                        id="dashboard"
+                        textValue="Dashboard"
+                        variant="default"
+                      >
+                        <Label>Dashboard</Label>
+                      </Dropdown.Item>
+                        <Dropdown.Item
+                        onPress={()=>router.push('/stores')}
+                        id="stores"
+                        textValue="stores"
+                        variant="default"
+                      >
+                        <Label>My Stores</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        onPress={() => router.push("/orders")}
+                        id="orders"
+                        textValue="Orders"
+                        variant="default"
+                      >
+                        <Label>Orders</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item
                         onPress={handleSignOut}
                         id="delete-file"
                         textValue="Delete file"
