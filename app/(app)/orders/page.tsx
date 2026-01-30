@@ -52,6 +52,7 @@ export default function OrdersPage() {
       }
 
       const data = await response.json();
+      console.log(data)
       setOrders(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
