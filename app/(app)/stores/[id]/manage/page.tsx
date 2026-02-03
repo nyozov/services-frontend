@@ -26,6 +26,7 @@ interface Store {
   slug: string;
   description: string | null;
   isActive: boolean;
+  viewCount: number;
 }
 
 interface Item {
@@ -225,8 +226,7 @@ export default function ManageStorePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Store Views</p>
-                  <p className="text-2xl font-bold text-gray-900">1,234</p>
-                  <p className="text-xs text-green-600">+12% this week</p>
+                  <p className="text-2xl font-bold text-gray-900">{store.viewCount}</p>
                 </div>
               </div>
             </Card>
