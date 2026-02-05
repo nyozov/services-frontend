@@ -37,6 +37,32 @@ export const storesApi = {
     if (!response.ok) throw new Error('Failed to create store');
     return response.json();
   },
+  update: async (
+    token: string,
+    storeId: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      isActive?: boolean;
+      primaryColor?: string;
+      bannerImage?: string | null;
+      logoImage?: string | null;
+      showBranding?: boolean;
+      enableReviews?: boolean;
+      showSocialLinks?: boolean;
+      websiteUrl?: string | null;
+      instagramUrl?: string | null;
+      twitterUrl?: string | null;
+    }
+  ) => {
+    const response = await fetch(`${API_URL}/stores/${storeId}`, {
+      method: 'PATCH',
+      headers: await getHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update store');
+    return response.json();
+  },
 };
 
 export const itemsApi = {

@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Card, Spinner, Button, Avatar, Chip } from "@heroui/react";
-import { 
-  IoStorefront, 
-  IoCartOutline, 
+import { Card, Spinner, Button, Avatar } from "@heroui/react";
+import {
+  IoStorefront,
+  IoCartOutline,
   IoShareSocialOutline,
   IoHeartOutline,
   IoLocationOutline,
   IoMailOutline,
-  IoCheckmarkCircle
+  IoCheckmarkCircle,
+  IoLogoInstagram,
+  IoGlobeOutline,
+  IoLogoTwitter,
 } from "react-icons/io5";
 import CheckoutModal from "@/app/components/CheckoutModal";
 
@@ -20,6 +23,16 @@ interface Store {
   slug: string;
   description: string | null;
   isActive: boolean;
+  viewCount?: number;
+  primaryColor?: string;
+  bannerImage?: string | null;
+  logoImage?: string | null;
+  showBranding?: boolean;
+  enableReviews?: boolean;
+  showSocialLinks?: boolean;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  twitterUrl?: string | null;
   user: {
     name: string | null;
     email: string;
@@ -56,9 +69,28 @@ export default function PublicStorePage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api";
+
+  const accentColor = useMemo(
+    () => store?.primaryColor || "#3b82f6",
+    [store?.primaryColor],
+  );
+
+  const heroStyle = useMemo((): CSSProperties => {
+    if (!store?.bannerImage) return {};
+    return {
+      backgroundImage: `url(${store.bannerImage})`,
+    };
+  }, [store?.bannerImage]);
+
+  const hasBanner = Boolean(store?.bannerImage);
+  const heroTextClass = hasBanner ? "text-white" : "text-gray-900";
+  const heroSubTextClass = hasBanner ? "text-white/80" : "text-gray-600";
+
   useEffect(() => {
     fetchStore();
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/stores/${slug}/view`, {
+    fetch(`${apiBase}/stores/${slug}/view`, {
       method: "POST",
       credentials: "include",
     });
@@ -67,7 +99,7 @@ export default function PublicStorePage() {
   const fetchStore = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:3000/api/stores/${slug}`);
+      const response = await fetch(`${apiBase}/stores/${slug}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -92,9 +124,7 @@ export default function PublicStorePage() {
   const fetchItems = async () => {
     try {
       setIsLoadingItems(true);
-      const response = await fetch(
-        `http://localhost:3000/api/stores/${slug}/items`,
-      );
+      const response = await fetch(`${apiBase}/stores/${slug}/items`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch items");
@@ -174,83 +204,129 @@ export default function PublicStorePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Hero Section with Store Header */}
-      <div className="relative bg-white border-b overflow-hidden">
-        {/* Decorative background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="grid lg:grid-cols-[1fr,auto] gap-8 items-start">
+      <div
+        className="relative overflow-hidden border-b"
+        style={{ backgroundColor: hasBanner ? undefined : "#f8fafc" }}
+      >
+        <div
+          className={`absolute inset-0 ${hasBanner ? "bg-cover bg-center" : "bg-gradient-to-br from-white via-white to-slate-100"}`}
+          style={heroStyle}
+        />
+        <div
+          className={`absolute inset-0 ${hasBanner ? "bg-slate-950/40" : "bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_55%)]"}`}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex justify-between items-start flex-col lg:flex-row w-full gap-4">
             {/* Store Info */}
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <IoStorefront size={36} className="text-white" />
+            <div className="space-y-4 w-full">
+              <div className="flex items-start gap-5">
+                <div
+                  className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${
+                    hasBanner ? "bg-white/90" : "bg-white"
+                  }`}
+                >
+                  {store.logoImage ? (
+                    <img
+                      src={store.logoImage}
+                      alt={`${store.name} logo`}
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <IoStorefront size={36} style={{ color: accentColor }} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 tracking-tight">
-                      {store.name}
-                    </h1>
-                  </div>
+                  <h1
+                    className={`text-4xl lg:text-5xl font-bold tracking-tight ${heroTextClass}`}
+                  >
+                    {store.name}
+                  </h1>
                   {store.description && (
-                    <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">
+                    <p
+                      className={`text-lg leading-relaxed max-w-2xl mt-2 ${heroSubTextClass}`}
+                    >
                       {store.description}
                     </p>
                   )}
-                  
-                  {/* Placeholder stats */}
-                  <div className="flex flex-wrap gap-6 mt-6 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <IoLocationOutline size={18} className="text-primary" />
-                      <span>Ships Worldwide</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <IoCheckmarkCircle size={18} className="text-primary" />
-                      <span>{items.length} Products</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="primary"
-                  onPress={handleShare}
-                  className="font-medium"
+              {store.showSocialLinks && (
+                <div
+                  className={`flex flex-wrap gap-4 text-sm ${heroSubTextClass}`}
                 >
-                  <IoShareSocialOutline size={18} />
-                  Share Store
-                </Button>
-                <Button
-                  variant="primary"
-                  className="font-medium"
-                >
-                <IoHeartOutline size={18} />  Follow
-                </Button>
-              </div>
+                  {store.websiteUrl && (
+                    <a
+                      href={store.websiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80"
+                    >
+                      <IoGlobeOutline
+                        size={18}
+                        style={{ color: accentColor }}
+                      />
+                      Website
+                    </a>
+                  )}
+                  {store.instagramUrl && (
+                    <a
+                      href={store.instagramUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80"
+                    >
+                      <IoLogoInstagram
+                        size={18}
+                        style={{ color: accentColor }}
+                      />
+                      Instagram
+                    </a>
+                  )}
+                  {store.twitterUrl && (
+                    <a
+                      href={store.twitterUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80"
+                    >
+                      <IoLogoTwitter size={18} style={{ color: accentColor }} />
+                      X / Twitter
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Seller Profile Card */}
-            <Card className="w-full lg:w-80 border shadow-sm">
+            <Card
+              className={`w-full border shadow-sm ${hasBanner ? "bg-white/95 backdrop-blur" : "bg-white"}`}
+            >
               <div className="p-6">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
                   Seller
                 </p>
                 <div className="flex items-start gap-4">
-                  <Avatar 
-                    size="lg"
-                    className="flex-shrink-0"
-                  >
+                  <Avatar size="lg" className="flex-shrink-0">
                     <Avatar.Image
-                        alt="Bob"
-                        src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
-                      />
-                    <Avatar.Fallback className="bg-primary/10 text-primary font-semibold">
+                      alt={store.user.name || "Store Owner"}
+                      src={
+                        store.user.imageUrl ||
+                        "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
+                      }
+                    />
+                    <Avatar.Fallback
+                      className="font-semibold"
+                      style={{
+                        backgroundColor: `${accentColor}1A`,
+                        color: accentColor,
+                      }}
+                    >
                       {store.user.name?.[0]?.toUpperCase() || "S"}
                     </Avatar.Fallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-lg">
                       {store.user.name || "Store Owner"}
@@ -259,31 +335,30 @@ export default function PublicStorePage() {
                       <IoMailOutline size={14} />
                       <span className="truncate">{store.user.email}</span>
                     </div>
-                    
-                    {/* Placeholder seller stats */}
+
                     <div className="mt-4 pt-4 border-t space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Member since</span>
-                        <span className="font-medium text-gray-900">2024</span>
+                        <span className="text-gray-600">Store views</span>
+                        <span className="font-medium text-gray-900">
+                          {store.viewCount ?? 0}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Response time</span>
-                        <span className="font-medium text-gray-900">1 hour</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total sales</span>
-                        <span className="font-medium text-gray-900">248</span>
+                        <span className="text-gray-600">Listings</span>
+                        <span className="font-medium text-gray-900">
+                          {items.length}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <Button 
-                  variant="flat" 
-                  color="primary"
+                <Button
+                  variant="primary"
                   className="w-full mt-6 font-medium"
-                  startContent={<IoMailOutline size={18} />}
+                  style={{ backgroundColor: accentColor }}
                 >
+                  <IoMailOutline size={18} className="mr-2" />
                   Contact Seller
                 </Button>
               </div>
@@ -298,15 +373,8 @@ export default function PublicStorePage() {
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Products</h2>
             <p className="text-gray-600">
-              {items.length} {items.length === 1 ? 'item' : 'items'} available
+              {items.length} {items.length === 1 ? "item" : "items"} available
             </p>
-          </div>
-          
-          {/* Placeholder filters */}
-          <div className="hidden md:flex gap-2">
-            <Button variant="bordered" size="sm">All</Button>
-            <Button variant="light" size="sm">Featured</Button>
-            <Button variant="light" size="sm">New</Button>
           </div>
         </div>
 
@@ -322,17 +390,12 @@ export default function PublicStorePage() {
             <p className="text-xl font-semibold text-gray-900 mb-2">
               No products available yet
             </p>
-            <p className="text-gray-600">
-              Check back soon for new items!
-            </p>
+            <p className="text-gray-600">Check back soon for new items!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
-              <Card
-                key={item.id}
-                className="group overflow-hidden hover:shadow-2xl transition-all duration-300 border"
-              >
+              <Card key={item.id} className="group overflow-hidden border">
                 {/* Product Image */}
                 <div className="relative">
                   {item.images && item.images.length > 0 ? (
@@ -348,11 +411,11 @@ export default function PublicStorePage() {
                       <span className="text-gray-400 text-sm">No image</span>
                     </div>
                   )}
-                  
+
                   {/* Floating action button */}
                   <Button
                     isIconOnly
-                    variant="flat"
+                    variant="secondary"
                     className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
                     size="sm"
                   >
@@ -377,17 +440,20 @@ export default function PublicStorePage() {
                       <p className="text-3xl font-bold text-gray-900">
                         ${Number(item.price).toFixed(2)}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Free shipping</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Free shipping
+                      </p>
                     </div>
                   </div>
 
                   <Button
-                    color="primary"
                     className="w-full font-semibold shadow-sm"
                     size="lg"
                     onPress={() => handleBuyClick(item)}
-                    startContent={<IoCartOutline size={20} />}
+                    variant="primary"
+                    style={{ backgroundColor: accentColor }}
                   >
+                    <IoCartOutline size={20} className="mr-2" />
                     Buy Now
                   </Button>
                 </div>
@@ -414,12 +480,22 @@ export default function PublicStorePage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Trust & Safety</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">
+                Trust & Safety
+              </h3>
               <p className="text-sm text-gray-600">
                 Secure payments powered by Stripe.
               </p>
             </div>
           </div>
+          {store.showBranding !== false && (
+            <p className="text-xs text-gray-500 mt-10 text-center">
+              Powered by{" "}
+              <span className="font-semibold" style={{ color: accentColor }}>
+                YourApp
+              </span>
+            </p>
+          )}
         </div>
       </div>
 

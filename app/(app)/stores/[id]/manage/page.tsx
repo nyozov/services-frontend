@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Button, Card, Spinner, Switch, Label, Tabs } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Spinner,
+  Switch,
+  Label,
+  Tabs,
+  Input,
+  TextArea,
+} from "@heroui/react";
 import {
   IoAdd,
   IoArrowBack,
@@ -18,13 +27,24 @@ import {
 } from "react-icons/io5";
 import Link from "next/link";
 import AddProductModal from "@/app/components/AddProductModal";
-import { itemsApi } from "@/lib/services/api";
+import { itemsApi, storesApi } from "@/lib/services/api";
+
+const DEFAULT_PRIMARY = "#3b82f6";
 
 interface Store {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  primaryColor?: string;
+  bannerImage?: string | null;
+  logoImage?: string | null;
+  showBranding?: boolean;
+  enableReviews?: boolean;
+  showSocialLinks?: boolean;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  twitterUrl?: string | null;
   isActive: boolean;
   viewCount: number;
 }
@@ -52,14 +72,31 @@ export default function ManageStorePage() {
   const [copied, setCopied] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [storeInfo, setStoreInfo] = useState({
+    name: "",
+    description: "",
+  });
 
   // Store customization state (placeholder)
   const [storeSettings, setStoreSettings] = useState({
-    primaryColor: "#3b82f6",
+    primaryColor: DEFAULT_PRIMARY,
     showBranding: true,
     enableReviews: false,
     showSocialLinks: false,
     bannerImage: null as string | null,
+    logoImage: null as string | null,
+    websiteUrl: "",
+    instagramUrl: "",
+    twitterUrl: "",
   });
 
   useEffect(() => {
@@ -72,15 +109,31 @@ export default function ManageStorePage() {
     }
   }, [store]);
 
+  useEffect(() => {
+    if (!store) return;
+    setStoreSettings({
+      primaryColor: store.primaryColor || DEFAULT_PRIMARY,
+      bannerImage: store.bannerImage ?? null,
+      logoImage: store.logoImage ?? null,
+      showBranding: store.showBranding ?? true,
+      enableReviews: store.enableReviews ?? false,
+      showSocialLinks: store.showSocialLinks ?? false,
+      websiteUrl: store.websiteUrl ?? "",
+      instagramUrl: store.instagramUrl ?? "",
+      twitterUrl: store.twitterUrl ?? "",
+    });
+    setStoreInfo({
+      name: store.name || "",
+      description: store.description ?? "",
+    });
+  }, [store]);
+
   const fetchStore = async () => {
     try {
       setIsLoading(true);
       const token = await getToken();
-      const response = await fetch("http://localhost:3000/api/stores", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error("Failed to fetch stores");
-      const stores = await response.json();
+      if (!token) throw new Error("Not authenticated");
+      const stores = await storesApi.getAll(token);
       const foundStore = stores.find((s: Store) => s.id === storeId);
       if (!foundStore) throw new Error("Store not found");
       setStore(foundStore);
@@ -104,6 +157,127 @@ export default function ManageStorePage() {
     } finally {
       setIsLoadingItems(false);
     }
+  };
+
+  const uploadToCloudinary = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append(
+      "upload_preset",
+      process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+    );
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error("Image upload failed");
+    }
+
+    return res.json();
+  };
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) return;
+    setIsUploadingLogo(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadToCloudinary(logoFile);
+      setStoreSettings((prev) => ({
+        ...prev,
+        logoImage: uploaded.secure_url,
+      }));
+      setLogoPreview(null);
+      setLogoFile(null);
+      setSaveMessage("Logo uploaded");
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Logo upload failed");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleBannerUpload = async () => {
+    if (!bannerFile) return;
+    setIsUploadingBanner(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadToCloudinary(bannerFile);
+      setStoreSettings((prev) => ({
+        ...prev,
+        bannerImage: uploaded.secure_url,
+      }));
+      setBannerPreview(null);
+      setBannerFile(null);
+      setSaveMessage("Banner uploaded");
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Banner upload failed",
+      );
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const persistStoreUpdate = async (
+    payload: Record<string, unknown>,
+    message: string,
+  ) => {
+    if (!store) return;
+    try {
+      setIsSaving(true);
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+      const updated = await storesApi.update(token, store.id, payload);
+      setStore(updated);
+      setSaveMessage(message);
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch (err) {
+      setSaveMessage(
+        err instanceof Error ? err.message : "Failed to save changes",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDesign = async () => {
+    await persistStoreUpdate(
+      {
+        primaryColor: storeSettings.primaryColor,
+        bannerImage: storeSettings.bannerImage || null,
+        logoImage: storeSettings.logoImage || null,
+        showBranding: storeSettings.showBranding,
+        enableReviews: storeSettings.enableReviews,
+        showSocialLinks: storeSettings.showSocialLinks,
+        websiteUrl: storeSettings.websiteUrl || null,
+        instagramUrl: storeSettings.instagramUrl || null,
+        twitterUrl: storeSettings.twitterUrl || null,
+      },
+      "Design updated",
+    );
+  };
+
+  const handleSaveInfo = async () => {
+    await persistStoreUpdate(
+      {
+        name: storeInfo.name.trim(),
+        description: storeInfo.description.trim() || null,
+      },
+      "Store info updated",
+    );
+  };
+
+  const handleStatusChange = async (nextStatus: boolean) => {
+    if (!store || store.isActive === nextStatus) return;
+    await persistStoreUpdate({ isActive: nextStatus }, "Store status updated");
   };
 
   const copyStoreUrl = () => {
@@ -156,6 +330,9 @@ export default function ManageStorePage() {
             </div>
 
             <div className="flex items-center gap-3">
+              {saveMessage && (
+                <span className="text-sm text-gray-600">{saveMessage}</span>
+              )}
               <span
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                   store.isActive
@@ -226,38 +403,10 @@ export default function ManageStorePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Store Views</p>
-                  <p className="text-2xl font-bold text-gray-900">{store.viewCount}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {store.viewCount}
+                  </p>
                 </div>
-              </div>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-              <div className="space-y-2">
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-2"
-                >
-                  <IoAdd size={18} />
-                  Add Product
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-2"
-                >
-                  <IoCreateOutline size={18} />
-                  Edit Store Info
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-2"
-                >
-                  <IoColorPaletteOutline size={18} />
-                  Change Theme
-                </Button>
               </div>
             </Card>
           </div>
@@ -413,60 +562,269 @@ export default function ManageStorePage() {
                       </p>
                     </div>
 
-                    <Card className="p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Banner Image
-                      </h3>
-                      <div className="aspect-video bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg mb-4 flex items-center justify-center">
-                        <IoImageOutline size={48} className="text-white/50" />
+                    <Card className="p-6 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900">
+                          Brand Kit
+                        </h3>
+                        <div
+                          className="w-10 h-10 rounded-full border"
+                          style={{
+                            backgroundColor: storeSettings.primaryColor,
+                          }}
+                        />
                       </div>
-                      <Button variant="secondary" className="w-full">
-                        Upload Banner Image
-                      </Button>
-                    </Card>
 
-                    <Card className="p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Theme Color
-                      </h3>
-                      <div className="flex gap-3 mb-4">
-                        {[
-                          "#3b82f6",
-                          "#10b981",
-                          "#f59e0b",
-                          "#ef4444",
-                          "#8b5cf6",
-                        ].map((color) => (
-                          <button
-                            key={color}
-                            onClick={() =>
-                              setStoreSettings({
-                                ...storeSettings,
-                                primaryColor: color,
-                              })
+                      <div className="grid gap-6 lg:grid-cols-2">
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-gray-900">
+                            Logo Image
+                          </Label>
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 h-20 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden">
+                              {logoPreview || storeSettings.logoImage ? (
+                                <img
+                                  src={
+                                    logoPreview || storeSettings.logoImage || ""
+                                  }
+                                  alt="Store logo"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <IoImageOutline
+                                  size={28}
+                                  className="text-gray-400"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  if (!file) return;
+                                  setLogoFile(file);
+                                  setLogoPreview(URL.createObjectURL(file));
+                                }}
+                              />
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onPress={handleLogoUpload}
+                                  isDisabled={!logoFile || isUploadingLogo}
+                                >
+                                  {isUploadingLogo
+                                    ? "Uploading..."
+                                    : "Upload Logo"}
+                                </Button>
+                                <p className="text-xs text-gray-500">
+                                  Square image works best.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-gray-900">
+                            Banner Image
+                          </Label>
+                          <div className="aspect-[16/9] rounded-2xl overflow-hidden border bg-gray-100 flex items-center justify-center">
+                            {bannerPreview || storeSettings.bannerImage ? (
+                              <img
+                                src={
+                                  bannerPreview ||
+                                  storeSettings.bannerImage ||
+                                  ""
+                                }
+                                alt="Store banner"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <IoImageOutline
+                                size={36}
+                                className="text-gray-400"
+                              />
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (!file) return;
+                                setBannerFile(file);
+                                setBannerPreview(URL.createObjectURL(file));
+                              }}
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onPress={handleBannerUpload}
+                              isDisabled={!bannerFile || isUploadingBanner}
+                            >
+                              {isUploadingBanner
+                                ? "Uploading..."
+                                : "Upload Banner"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {uploadError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                          <p className="text-sm text-red-700">{uploadError}</p>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <Label className="text-sm font-semibold text-gray-900">
+                          Theme Color
+                        </Label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <input
+                            type="color"
+                            value={storeSettings.primaryColor}
+                            onChange={(event) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                primaryColor: event.target.value,
+                              }))
                             }
-                            className={`w-12 h-12 rounded-lg border-2 ${
-                              storeSettings.primaryColor === color
-                                ? "border-gray-900"
-                                : "border-transparent"
-                            }`}
-                            style={{ backgroundColor: color }}
+                            className="h-12 w-12 rounded-lg border border-gray-200 bg-white"
                           />
-                        ))}
+                          <Input
+                            value={storeSettings.primaryColor}
+                            onChange={(event) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                primaryColor: event.target.value,
+                              }))
+                            }
+                          />
+                          <div className="flex gap-2">
+                            {[
+                              "#3b82f6",
+                              "#10b981",
+                              "#f59e0b",
+                              "#ef4444",
+                              "#8b5cf6",
+                            ].map((color) => (
+                              <button
+                                key={color}
+                                onClick={() =>
+                                  setStoreSettings((prev) => ({
+                                    ...prev,
+                                    primaryColor: color,
+                                  }))
+                                }
+                                className={`h-10 w-10 rounded-lg border-2 ${
+                                  storeSettings.primaryColor === color
+                                    ? "border-gray-900"
+                                    : "border-transparent"
+                                }`}
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        Selected: {storeSettings.primaryColor}
-                      </p>
+
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          onPress={handleSaveDesign}
+                          isDisabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner size="sm" color="current" />
+                              Saving
+                            </span>
+                          ) : (
+                            "Save Design"
+                          )}
+                        </Button>
+                      </div>
                     </Card>
 
-                    <Card className="p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Store Logo
-                      </h3>
-                      <div className="w-32 h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                        <IoImageOutline size={32} className="text-gray-400" />
+                    <Card className="p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="font-semibold text-gray-900">
+                            Social Links
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Show social links on your storefront
+                          </p>
+                        </div>
+                        <Switch
+                          isSelected={storeSettings.showSocialLinks}
+                          onChange={(checked) =>
+                            setStoreSettings((prev) => ({
+                              ...prev,
+                              showSocialLinks: checked,
+                            }))
+                          }
+                        >
+                          <Switch.Control>
+                            <Switch.Thumb />
+                          </Switch.Control>
+                        </Switch>
                       </div>
-                      <Button variant="secondary">Upload Logo</Button>
+
+                      {storeSettings.showSocialLinks && (
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs uppercase tracking-wide text-gray-500">
+                              Website
+                            </Label>
+                            <Input
+                              value={storeSettings.websiteUrl}
+                              onChange={(event) =>
+                                setStoreSettings((prev) => ({
+                                  ...prev,
+                                  websiteUrl: event.target.value,
+                                }))
+                              }
+                              placeholder="https://yourdomain.com"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs uppercase tracking-wide text-gray-500">
+                              Instagram
+                            </Label>
+                            <Input
+                              value={storeSettings.instagramUrl}
+                              onChange={(event) =>
+                                setStoreSettings((prev) => ({
+                                  ...prev,
+                                  instagramUrl: event.target.value,
+                                }))
+                              }
+                              placeholder="https://instagram.com/yourstore"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs uppercase tracking-wide text-gray-500">
+                              Twitter / X
+                            </Label>
+                            <Input
+                              value={storeSettings.twitterUrl}
+                              onChange={(event) =>
+                                setStoreSettings((prev) => ({
+                                  ...prev,
+                                  twitterUrl: event.target.value,
+                                }))
+                              }
+                              placeholder="https://x.com/yourstore"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </Card>
                   </div>
                 </Tabs.Panel>
@@ -483,6 +841,61 @@ export default function ManageStorePage() {
                       </p>
                     </div>
 
+                    <Card className="p-6 space-y-4">
+                      <h3 className="font-semibold text-gray-900">
+                        Store Info
+                      </h3>
+                      <div className="grid gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-xs uppercase tracking-wide text-gray-500">
+                            Store Name
+                          </Label>
+                          <Input
+                            value={storeInfo.name}
+                            onChange={(event) =>
+                              setStoreInfo((prev) => ({
+                                ...prev,
+                                name: event.target.value,
+                              }))
+                            }
+                            placeholder="Your store name"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs uppercase tracking-wide text-gray-500">
+                            Description
+                          </Label>
+                          <TextArea
+                            value={storeInfo.description}
+                            onChange={(event) =>
+                              setStoreInfo((prev) => ({
+                                ...prev,
+                                description: event.target.value,
+                              }))
+                            }
+                            placeholder="Tell shoppers about your brand"
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          onPress={handleSaveInfo}
+                          isDisabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner size="sm" color="current" />
+                              Saving
+                            </span>
+                          ) : (
+                            "Save Info"
+                          )}
+                        </Button>
+                      </div>
+                    </Card>
+
                     <Card className="p-6 space-y-6">
                       <div className="flex items-center justify-between">
                         <div>
@@ -496,10 +909,10 @@ export default function ManageStorePage() {
                         <Switch
                           isSelected={storeSettings.showBranding}
                           onChange={(checked) =>
-                            setStoreSettings({
-                              ...storeSettings,
+                            setStoreSettings((prev) => ({
+                              ...prev,
                               showBranding: checked,
-                            })
+                            }))
                           }
                         >
                           <Switch.Control>
@@ -520,35 +933,17 @@ export default function ManageStorePage() {
                           </div>
                           <Switch
                             isSelected={storeSettings.enableReviews}
-                            onValueChange={(checked) =>
-                              setStoreSettings({
-                                ...storeSettings,
+                            onChange={(checked) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
                                 enableReviews: checked,
-                              })
+                              }))
                             }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <Label className="font-semibold text-gray-900">
-                              Social Links
-                            </Label>
-                            <p className="text-sm text-gray-500">
-                              Show social media links on your store
-                            </p>
-                          </div>
-                          <Switch
-                            isSelected={storeSettings.showSocialLinks}
-                            onValueChange={(checked) =>
-                              setStoreSettings({
-                                ...storeSettings,
-                                showSocialLinks: checked,
-                              })
-                            }
-                          />
+                          >
+                            <Switch.Control>
+                              <Switch.Thumb />
+                            </Switch.Control>
+                          </Switch>
                         </div>
                       </div>
 
@@ -559,11 +954,13 @@ export default function ManageStorePage() {
                         <div className="flex gap-3">
                           <Button
                             variant={store.isActive ? "primary" : "secondary"}
+                            onPress={() => handleStatusChange(true)}
                           >
                             Active
                           </Button>
                           <Button
                             variant={!store.isActive ? "primary" : "secondary"}
+                            onPress={() => handleStatusChange(false)}
                           >
                             Inactive
                           </Button>
@@ -573,6 +970,23 @@ export default function ManageStorePage() {
                             ? "Your store is live and visible to customers"
                             : "Your store is hidden from customers"}
                         </p>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          onPress={handleSaveDesign}
+                          isDisabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Spinner size="sm" color="current" />
+                              Saving
+                            </span>
+                          ) : (
+                            "Save Preferences"
+                          )}
+                        </Button>
                       </div>
                     </Card>
 
