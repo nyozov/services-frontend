@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { Button, Card, Spinner, TextArea, Label } from "@heroui/react";
@@ -40,6 +40,7 @@ export default function InboxPage() {
   const [isThreadLoading, setIsThreadLoading] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetchConversations();
@@ -49,6 +50,14 @@ export default function InboxPage() {
     if (!selectedId) return;
     fetchMessages(selectedId);
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedConversation || isThreadLoading) return;
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  }, [selectedConversation, isThreadLoading]);
 
   const fetchConversations = async () => {
     try {
@@ -183,8 +192,8 @@ export default function InboxPage() {
             </div>
             <div className="max-h-[600px] overflow-y-auto">
               {isLoading ? (
-                <div className="p-6 text-center text-gray-500">
-                  <Spinner size="md" />
+                <div className="flex items-center gap-4">
+                  <Spinner />
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
@@ -254,10 +263,13 @@ export default function InboxPage() {
               </h3>
             </div>
 
-            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+            <div
+              className="flex-1 p-4 space-y-4 overflow-y-auto"
+              ref={messagesContainerRef}
+            >
               {isThreadLoading ? (
-                <div className="text-center text-gray-500 py-12">
-                  <Spinner size="md" />
+                <div className="flex items-center gap-4">
+                  <Spinner />
                 </div>
               ) : selectedConversation ? (
                 selectedConversation.messages.map((message) => {
@@ -299,15 +311,27 @@ export default function InboxPage() {
               )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 space-y-3">
-              <Label className="text-sm font-semibold text-gray-900">Reply</Label>
-              <TextArea
-                value={reply}
-                onChange={(event) => setReply(event.target.value)}
-                placeholder="Type your response..."
-                rows={3}
-              />
-              <div className="flex justify-end">
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-semibold text-gray-900">
+                  Reply
+                </Label>
+                <span className="text-xs text-gray-500">
+                  {reply.length}/1000
+                </span>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-gray-900 focus-within:bg-white transition-colors">
+                <TextArea
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value.slice(0, 1000))}
+                  rows={3}
+                  className="bg-transparent w-full border-0 p-0 text-sm text-gray-900 focus:outline-none focus:ring-0"
+                />
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-gray-500">
+                  Press send to notify the customer
+                </p>
                 <Button
                   variant="primary"
                   onPress={handleSend}
