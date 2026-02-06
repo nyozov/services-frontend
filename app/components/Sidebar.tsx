@@ -6,11 +6,13 @@ import {
   IoHomeOutline,
   IoReceiptOutline,
   IoStorefrontOutline,
+  IoMailOutline,
 } from "react-icons/io5";
 import { useUser } from "@clerk/nextjs";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: IoHomeOutline },
+  { name: "Inbox", href: "/inbox", icon: IoMailOutline },
   { name: "Orders", href: "/orders", icon: IoReceiptOutline },
   { name: "Stores", href: "/stores", icon: IoStorefrontOutline },
 ];

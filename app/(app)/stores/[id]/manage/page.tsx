@@ -477,10 +477,7 @@ export default function ManageStorePage() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {items.map((item) => (
-                          <Card
-                            key={item.id}
-                            className="overflow-hidden hover:shadow-lg transition-shadow"
-                          >
+                          <Card key={item.id} className="overflow-hidden ">
                             <div className="flex gap-4 p-4">
                               {item.images.length > 0 && item.images[0]?.url ? (
                                 <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0">

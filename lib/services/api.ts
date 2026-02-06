@@ -132,3 +132,94 @@ export const stripeApi = {
     return response.json();
   },
 };
+
+export const conversationsApi = {
+  getAll: async (token: string) => {
+    const response = await fetch(`${API_URL}/conversations`, {
+      headers: await getHeaders(token),
+    });
+    if (!response.ok) throw new Error('Failed to fetch conversations');
+    return response.json();
+  },
+
+  getMessages: async (token: string, conversationId: string) => {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+      headers: await getHeaders(token),
+    });
+    if (!response.ok) throw new Error('Failed to fetch messages');
+    return response.json();
+  },
+
+  getUnreadCount: async (token: string) => {
+    const response = await fetch(`${API_URL}/conversations/unread-count`, {
+      headers: await getHeaders(token),
+    });
+    if (!response.ok) throw new Error('Failed to fetch unread count');
+    return response.json();
+  },
+
+  markRead: async (token: string, conversationId: string) => {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/read`, {
+      method: 'POST',
+      headers: await getHeaders(token),
+    });
+    if (!response.ok) throw new Error('Failed to mark conversation read');
+    return response.json();
+  },
+
+  markAllRead: async (token: string) => {
+    const response = await fetch(`${API_URL}/conversations/mark-all-read`, {
+      method: 'POST',
+      headers: await getHeaders(token),
+    });
+    if (!response.ok) throw new Error('Failed to mark all read');
+    return response.json();
+  },
+
+  sendMessage: async (data: {
+    content: string;
+    conversationId?: string;
+    recipientUserId?: string;
+    guest?: { email: string; name?: string };
+    token?: string | null;
+  }) => {
+    const headers = await getHeaders(data.token);
+    const response = await fetch(`${API_URL}/conversations/message`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: data.content,
+        conversationId: data.conversationId,
+        recipientUserId: data.recipientUserId,
+        guest: data.guest,
+      }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to send message');
+    }
+    return response.json();
+  },
+
+  getGuestConversation: async (token: string) => {
+    const response = await fetch(`${API_URL}/conversations/guest/${token}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch conversation');
+    }
+    return response.json();
+  },
+
+  sendGuestMessage: async (token: string, content: string) => {
+    const response = await fetch(`${API_URL}/conversations/guest/${token}/message`, {
+      method: 'POST',
+      headers: await getHeaders(),
+      body: JSON.stringify({ content }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to send message');
+    }
+    return response.json();
+  },
+};

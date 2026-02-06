@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { Button, Avatar, Description, Label, Dropdown } from "@heroui/react";
 import Notifications from "./NotificationDropdown";
+import InboxDropdown from "./InboxDropdown";
 import { useRouter } from "next/navigation";
 
 export default function Nav() {
@@ -26,7 +27,12 @@ export default function Nav() {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            {isSignedIn && isLoaded && <Notifications />}
+            {isSignedIn && isLoaded && (
+              <>
+                <InboxDropdown />
+                <Notifications />
+              </>
+            )}
             {isSignedIn && isLoaded ? (
               <div className="flex items-center gap-3">
                 <Dropdown>

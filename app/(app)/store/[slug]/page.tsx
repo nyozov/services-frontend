@@ -16,6 +16,7 @@ import {
   IoLogoTwitter,
 } from "react-icons/io5";
 import CheckoutModal from "@/app/components/CheckoutModal";
+import MessageSellerModal from "@/app/components/MessageSellerModal";
 
 interface Store {
   id: string;
@@ -34,6 +35,7 @@ interface Store {
   instagramUrl?: string | null;
   twitterUrl?: string | null;
   user: {
+    id: string;
     name: string | null;
     email: string;
     imageUrl?: string;
@@ -68,6 +70,7 @@ export default function PublicStorePage() {
   // Checkout modal state
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [isMessageOpen, setIsMessageOpen] = useState(false);
 
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api";
@@ -252,6 +255,22 @@ export default function PublicStorePage() {
                 </div>
               </div>
 
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="primary"
+                  onPress={handleShare}
+                  className="font-medium"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <IoShareSocialOutline size={18} className="mr-2" />
+                  Share Store
+                </Button>
+                <Button variant="secondary" className="font-medium">
+                  <IoHeartOutline size={18} className="mr-2" />
+                  Follow
+                </Button>
+              </div>
+
               {store.showSocialLinks && (
                 <div
                   className={`flex flex-wrap gap-4 text-sm ${heroSubTextClass}`}
@@ -357,6 +376,7 @@ export default function PublicStorePage() {
                   variant="primary"
                   className="w-full mt-6 font-medium"
                   style={{ backgroundColor: accentColor }}
+                  onPress={() => setIsMessageOpen(true)}
                 >
                   <IoMailOutline size={18} className="mr-2" />
                   Contact Seller
@@ -507,6 +527,15 @@ export default function PublicStorePage() {
           itemPrice={Number(selectedItem.price)}
           isOpen={isCheckoutOpen}
           onOpenChange={setIsCheckoutOpen}
+        />
+      )}
+
+      {store?.user?.id && (
+        <MessageSellerModal
+          isOpen={isMessageOpen}
+          onOpenChange={setIsMessageOpen}
+          recipientUserId={store.user.id}
+          storeName={store.name}
         />
       )}
     </div>
