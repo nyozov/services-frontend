@@ -6,6 +6,7 @@ import {
   IoShieldCheckmarkOutline,
   IoTrendingUpOutline,
 } from "react-icons/io5";
+import GradientHeroButton from "../components/GradientHeroButton";
 
 export default function Home() {
   return (
@@ -18,7 +19,7 @@ export default function Home() {
             <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-gray-900 lg:text-6xl">
               Sell anything,
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">
                 share everywhere
               </span>
             </h1>
@@ -80,13 +81,7 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link href="/stores">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full sm:w-auto text-lg px-8 py-6 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-shadow"
-                >
-                  Start Selling Free →
-                </Button>
+                <GradientHeroButton>Get started for free</GradientHeroButton>
               </Link>
             </div>
           </div>
@@ -102,7 +97,7 @@ export default function Home() {
               <Card className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 p-6 shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500"></div>
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500"></div>
                     <div>
                       <div className="h-3 w-24 bg-gray-200 rounded"></div>
                       <div className="h-2 w-16 bg-gray-100 rounded mt-2"></div>

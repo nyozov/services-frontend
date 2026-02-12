@@ -6,6 +6,7 @@ import { Button, Avatar, Description, Label, Dropdown } from "@heroui/react";
 import Notifications from "./NotificationDropdown";
 import InboxDropdown from "./InboxDropdown";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function Nav() {
   const { isSignedIn, isLoaded, user } = useUser();
@@ -17,12 +18,18 @@ export default function Nav() {
   };
 
   return (
-    <nav className="">
+    <nav className="bg-transparent">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="text-lg font-semibold">
-            Think of an appname
+            <Image
+              src="/quickshoplogo.svg"
+              alt="Quick Shop Logo"
+              width={160}
+              height={40}
+              priority
+            />
           </Link>
 
           {/* Right side */}
@@ -68,8 +75,8 @@ export default function Nav() {
                       >
                         <Label>Dashboard</Label>
                       </Dropdown.Item>
-                        <Dropdown.Item
-                        onPress={()=>router.push('/stores')}
+                      <Dropdown.Item
+                        onPress={() => router.push("/stores")}
                         id="stores"
                         textValue="stores"
                         variant="default"

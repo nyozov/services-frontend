@@ -2,6 +2,7 @@
 
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Card, Spinner, Button, Avatar } from "@heroui/react";
 import {
   IoStorefront,
@@ -14,9 +15,10 @@ import {
   IoLogoInstagram,
   IoGlobeOutline,
   IoLogoTwitter,
+  IoStarOutline,
 } from "react-icons/io5";
-import CheckoutModal from "@/app/components/CheckoutModal";
 import MessageSellerModal from "@/app/components/MessageSellerModal";
+import Image from "next/image";
 
 interface Store {
   id: string;
@@ -68,8 +70,6 @@ export default function PublicStorePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Checkout modal state
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isMessageOpen, setIsMessageOpen] = useState(false);
 
   const apiBase =
@@ -140,11 +140,6 @@ export default function PublicStorePage() {
     } finally {
       setIsLoadingItems(false);
     }
-  };
-
-  const handleBuyClick = (item: Item) => {
-    setSelectedItem(item);
-    setIsCheckoutOpen(true);
   };
 
   const handleShare = async () => {
@@ -415,69 +410,46 @@ export default function PublicStorePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
-              <Card key={item.id} className="group overflow-hidden border">
-                {/* Product Image */}
-                <div className="relative">
-                  {item.images && item.images.length > 0 ? (
-                    <div className="w-full aspect-square bg-gray-100 overflow-hidden">
-                      <img
-                        src={item.images[0].url}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">No image</span>
-                    </div>
-                  )}
-
-                  {/* Floating action button */}
-                  <Button
-                    isIconOnly
-                    variant="secondary"
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                    size="sm"
-                  >
-                    <IoHeartOutline size={18} />
-                  </Button>
-                </div>
-
-                {/* Product Info */}
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1">
-                    {item.name}
-                  </h3>
-
-                  {item.description && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-end justify-between mb-4">
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        ${Number(item.price).toFixed(2)}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Free shipping
-                      </p>
-                    </div>
+              <Link key={item.id} href={`/store/${slug}/product/${item.id}`}>
+                <Card
+                  variant="transparent"
+                  className="group overflow-hidden   cursor-pointer"
+                >
+                  <div className="relative">
+                    {item.images && item.images.length > 0 ? (
+                      <div className="w-full aspect-square bg-gray-100 overflow-hidden">
+                        <img
+                          src={item.images[0].url}
+                          alt={item.name}
+                          className="w-full h-full object-cover  "
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">No image</span>
+                      </div>
+                    )}
                   </div>
 
-                  <Button
-                    className="w-full font-semibold shadow-sm"
-                    size="lg"
-                    onPress={() => handleBuyClick(item)}
-                    variant="primary"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    <IoCartOutline size={20} className="mr-2" />
-                    Buy Now
-                  </Button>
-                </div>
-              </Card>
+                  <div className="p-5 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-semibold text-base text-gray-900 line-clamp-1">
+                        {item.name}
+                      </h3>
+                    </div>
+
+                    <p className="text-lg font-semibold text-gray-900">
+                      ${Number(item.price).toFixed(2)}
+                    </p>
+
+                    {item.description && (
+                      <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
@@ -509,26 +481,21 @@ export default function PublicStorePage() {
             </div>
           </div>
           {store.showBranding !== false && (
-            <p className="text-xs text-gray-500 mt-10 text-center">
-              Powered by{" "}
-              <span className="font-semibold" style={{ color: accentColor }}>
-                YourApp
-              </span>
-            </p>
+            <div className="w-full flex items-center justify-center">
+              <div className="flex justify-center mt-5 items-center">
+                <span className="text text-sm text-gray-500 mr-[-20px] z-1000">Powered by</span>
+                <Image
+                  src="/quickshoplogo.svg"
+                  alt="Quick Shop Logo"
+                  width={160}
+                  height={40}
+                  priority
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Checkout Modal */}
-      {selectedItem && (
-        <CheckoutModal
-          itemId={selectedItem.id}
-          itemName={selectedItem.name}
-          itemPrice={Number(selectedItem.price)}
-          isOpen={isCheckoutOpen}
-          onOpenChange={setIsCheckoutOpen}
-        />
-      )}
 
       {store?.user?.id && (
         <MessageSellerModal

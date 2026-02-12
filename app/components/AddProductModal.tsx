@@ -30,8 +30,8 @@ export default function AddProductModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Upload image to Cloudinary
   const uploadToCloudinary = async (file: File) => {
@@ -68,11 +68,12 @@ export default function AddProductModal({
     const price = formData.get("price") as string;
 
     try {
-      let uploadedImage: { secure_url: string; public_id: string } | null =
-        null;
+      let uploadedImages: { secure_url: string; public_id: string }[] = [];
 
-      if (imageFile) {
-        uploadedImage = await uploadToCloudinary(imageFile);
+      if (imageFiles.length > 0) {
+        uploadedImages = await Promise.all(
+          imageFiles.map((file) => uploadToCloudinary(file))
+        );
       }
 
       const token = await getToken();
@@ -83,14 +84,10 @@ export default function AddProductModal({
         name,
         description: description || undefined,
         price: parseFloat(price),
-        images: uploadedImage
-          ? [
-              {
-                url: uploadedImage.secure_url,
-                publicId: uploadedImage.public_id,
-              },
-            ]
-          : [],
+        images: uploadedImages.map((img) => ({
+          url: img.secure_url,
+          publicId: img.public_id,
+        })),
       };
 
       const response = await fetch("http://localhost:3000/api/items", {
@@ -113,8 +110,8 @@ export default function AddProductModal({
 
       // Reset form + image state
       (e.target as HTMLFormElement).reset();
-      setImageFile(null);
-      setImagePreview(null);
+      setImageFiles([]);
+      setImagePreviews([]);
     } catch (err: any) {
       console.error("Error adding product:", err);
       setError(err.message || "Failed to add product");
@@ -198,21 +195,42 @@ export default function AddProductModal({
                   <Input
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setImageFile(file);
-                      setImagePreview(URL.createObjectURL(file));
+                      const files = Array.from(e.target.files || []);
+                      if (files.length === 0) return;
+                      setImageFiles(files);
+                      setImagePreviews(files.map((file) => URL.createObjectURL(file)));
                     }}
                   />
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="mt-2 h-32 w-32 object-cover rounded-md border"
-                    />
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={preview} className="relative">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-24 w-full object-cover rounded-md border"
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1 right-1 bg-white/80 text-xs rounded-full px-1.5 py-0.5"
+                            onClick={() => {
+                              setImageFiles((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                              setImagePreviews((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <Description>JPG, PNG, or WebP. Max 5MB.</Description>
+                  <Description>Upload multiple images. JPG, PNG, or WebP.</Description>
                 </div>
 
                 {/* Actions */}
