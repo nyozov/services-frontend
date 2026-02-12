@@ -104,7 +104,7 @@ export default function Nav() {
                 </Dropdown>
               </div>
             ) : (
-              <Button variant="primary" onPress={() => router.push("/sign-in")}>
+              <Button variant="primary" className="bg-black" onPress={() => router.push("/sign-in")}>
                 Sign in
               </Button>
             )}

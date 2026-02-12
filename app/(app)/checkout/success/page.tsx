@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { stripeApi } from "@/lib/services/api";
 import { Button } from "@heroui/react";
+import { loadStripe } from "@stripe/stripe-js";
 
 export default function SuccessPage() {
   const searchParams = useSearchParams();
@@ -14,37 +15,93 @@ export default function SuccessPage() {
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
+    const paymentIntentId = searchParams.get("payment_intent");
+    const paymentIntentClientSecret = searchParams.get(
+      "payment_intent_client_secret"
+    );
 
-    if (!sessionId) {
-      setStatus("error");
-      setMessage("No session ID found. Please check your order status.");
+    if (sessionId) {
+      const verifySession = async () => {
+        try {
+          const result = await stripeApi.verifySession(sessionId);
+
+          if (result.success) {
+            setStatus("success");
+            setMessage("Payment successful! Your order has been confirmed.");
+            if (result.order?.id) {
+              setOrderId(result.order.id);
+            }
+          } else {
+            setStatus("error");
+            setMessage(result.message || "Payment verification failed.");
+          }
+        } catch (error: any) {
+          console.error("Error verifying session:", error);
+          setStatus("error");
+          setMessage(
+            error.message || "Failed to verify payment. Please contact support."
+          );
+        }
+      };
+
+      verifySession();
       return;
     }
 
-    // Verify the session and update order status
-    const verifySession = async () => {
-      try {
-        console.log("Verifying session:", sessionId);
-        const result = await stripeApi.verifySession(sessionId);
+    if (paymentIntentId && paymentIntentClientSecret) {
+      const stripePublishableKey =
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+      const stripePromise = stripePublishableKey
+        ? loadStripe(stripePublishableKey)
+        : null;
 
-        if (result.success) {
-          setStatus("success");
-          setMessage("Payment successful! Your order has been confirmed.");
-          if (result.order?.id) {
-            setOrderId(result.order.id);
-          }
-        } else {
-          setStatus("error");
-          setMessage(result.message || "Payment verification failed.");
-        }
-      } catch (error: any) {
-        console.error("Error verifying session:", error);
+      if (!stripePromise) {
         setStatus("error");
-        setMessage(error.message || "Failed to verify payment. Please contact support.");
+        setMessage("Stripe publishable key is missing.");
+        return;
       }
-    };
 
-    verifySession();
+      const verifyPaymentIntent = async () => {
+        try {
+          const stripe = await stripePromise;
+          if (!stripe) throw new Error("Stripe not initialized");
+
+          const result = await stripe.retrievePaymentIntent(
+            paymentIntentClientSecret
+          );
+
+          if (result.error) {
+            setStatus("error");
+            setMessage(result.error.message || "Payment verification failed.");
+            return;
+          }
+
+          if (result.paymentIntent?.status === "succeeded") {
+            const syncResult = await stripeApi.syncPaymentIntent(paymentIntentId);
+            if (syncResult?.orderId) {
+              setOrderId(syncResult.orderId);
+            }
+            setStatus("success");
+            setMessage("Payment successful! Your order has been confirmed.");
+          } else {
+            setStatus("error");
+            setMessage("Payment not completed yet.");
+          }
+        } catch (error: any) {
+          console.error("Error verifying payment intent:", error);
+          setStatus("error");
+          setMessage(
+            error.message || "Failed to verify payment. Please contact support."
+          );
+        }
+      };
+
+      verifyPaymentIntent();
+      return;
+    }
+
+    setStatus("error");
+    setMessage("No payment reference found. Please check your order status.");
   }, [searchParams]);
 
   return (

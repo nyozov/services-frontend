@@ -120,6 +120,48 @@ export const stripeApi = {
     return response.json();
   },
 
+  createPaymentIntent: async (
+    itemId: string,
+    buyerEmail?: string,
+    idempotencyKey?: string
+  ) => {
+    const response = await fetch(`${API_URL}/stripe/payment-intent`, {
+      method: 'POST',
+      headers: await getHeaders(),
+      body: JSON.stringify({ itemId, buyerEmail, idempotencyKey }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create payment intent');
+    }
+    return response.json();
+  },
+
+  updatePaymentIntentEmail: async (paymentIntentId: string, buyerEmail: string) => {
+    const response = await fetch(`${API_URL}/stripe/payment-intent/${paymentIntentId}/email`, {
+      method: 'POST',
+      headers: await getHeaders(),
+      body: JSON.stringify({ buyerEmail }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update payment intent email');
+    }
+    return response.json();
+  },
+
+  syncPaymentIntent: async (paymentIntentId: string) => {
+    const response = await fetch(`${API_URL}/stripe/payment-intent/${paymentIntentId}/sync`, {
+      method: 'POST',
+      headers: await getHeaders(),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to sync payment intent');
+    }
+    return response.json();
+  },
+
   verifySession: async (sessionId: string) => {
     const response = await fetch(`${API_URL}/stripe/verify-session/${sessionId}`, {
       method: 'GET',
