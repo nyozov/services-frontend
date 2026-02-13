@@ -211,7 +211,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
       {/* ---------- OTP Form ---------- */}
       {verificationStep ? (
-        <Form onSubmit={handleVerification} className="space-y-4">
+        <Form onSubmit={handleVerification} className="space-y-4 flex flex-col justify-center items-center">
           <InputOTP
             maxLength={6}
             value={verificationCode}

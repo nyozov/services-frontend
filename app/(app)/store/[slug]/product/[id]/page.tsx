@@ -6,15 +6,17 @@ import Link from "next/link";
 import { Button, Card, Input, Spinner } from "@heroui/react";
 import {
   IoArrowBack,
-  IoCartOutline,
-  IoHeartOutline,
-  IoStarOutline,
-  IoShieldCheckmarkOutline,
-  IoCardOutline,
-  IoLockClosedOutline,
   IoCheckmarkCircleOutline,
+  IoLockClosedOutline,
+  IoShieldCheckmarkOutline,
 } from "react-icons/io5";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import {
+  AddressElement,
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { stripeApi } from "@/lib/services/api";
 import { useUser } from "@clerk/nextjs";
@@ -60,6 +62,7 @@ export default function ProductPage() {
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
   const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerName, setBuyerName] = useState("");
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -75,10 +78,14 @@ export default function ProductPage() {
   useEffect(() => {
     if (!isLoaded || !user) return;
     const email = user.primaryEmailAddress?.emailAddress;
+    const fullName = user.fullName;
     if (email && !buyerEmail) {
       setBuyerEmail(email);
     }
-  }, [isLoaded, user, buyerEmail]);
+    if (fullName && !buyerName) {
+      setBuyerName(fullName);
+    }
+  }, [isLoaded, user, buyerEmail, buyerName]);
 
   const fetchData = async () => {
     try {
@@ -243,45 +250,60 @@ export default function ProductPage() {
     });
   }, [searchParams]);
 
+  const isFormComplete = () => {
+    return buyerEmail;
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Spinner size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <Spinner size="lg" color="default" />
       </div>
     );
   }
 
   if (!store || !item) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-2">
             Product not found
           </h2>
           <Link href={`/store/${slug}`}>
-            <Button variant="ghost" className="mt-4">
+            <Button variant="bordered" size="sm" className="mt-4">
               Back to store
             </Button>
           </Link>
-        </Card>
+        </div>
       </div>
     );
   }
 
-  const activeImage =
-    sortedImages[imageIndex]?.url || sortedImages[0]?.url || "";
+  const activeImage = sortedImages[imageIndex]?.url || sortedImages[0]?.url || "";
+  const platformFee = Number(item.price) * 0.05;
+  const total = Number(item.price);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <Link href={`/store/${slug}`} className="inline-flex items-center gap-2 text-sm text-gray-600">
-          <IoArrowBack size={16} />
-          Back to {store.name}
-        </Link>
+    <div className="min-h-screen bg-neutral-50">
+      {/* Header */}
+      <div className="border-b border-neutral-200 bg-white sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <Link
+            href={`/store/${slug}`}
+            className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            <IoArrowBack size={16} />
+            Back to {store.name}
+          </Link>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr,0.9fr] gap-10 mt-6">
-          <div className="space-y-5">
-            <div className="rounded-3xl overflow-hidden bg-white border border-gray-200 shadow-sm">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Product Info */}
+          <div className="space-y-6">
+            {/* Product Images */}
+            <div className="rounded-2xl overflow-hidden bg-white border border-neutral-200">
               {activeImage ? (
                 <img
                   src={activeImage}
@@ -289,7 +311,7 @@ export default function ProductPage() {
                   className="w-full aspect-square object-cover"
                 />
               ) : (
-                <div className="w-full aspect-square flex items-center justify-center text-gray-400">
+                <div className="w-full aspect-square flex items-center justify-center bg-neutral-100 text-neutral-400">
                   No image
                 </div>
               )}
@@ -301,10 +323,10 @@ export default function ProductPage() {
                   <button
                     key={image.id || image.url}
                     onClick={() => setImageIndex(index)}
-                    className={`rounded-2xl overflow-hidden border ${
+                    className={`rounded-xl overflow-hidden border-2 transition-all ${
                       index === imageIndex
-                        ? "border-gray-900"
-                        : "border-gray-200"
+                        ? "border-neutral-900"
+                        : "border-neutral-200 hover:border-neutral-300"
                     }`}
                   >
                     <img
@@ -317,181 +339,190 @@ export default function ProductPage() {
               </div>
             )}
 
-            <Card className="p-6 border border-gray-200/80">
-              <h3 className="text-lg font-semibold text-gray-900">Product details</h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Crafted for modern buyers with fast shipping and easy returns.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
-                <div className="rounded-xl border border-gray-200 p-3">Ships in 2-4 days</div>
-                <div className="rounded-xl border border-gray-200 p-3">Free returns</div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-6 lg:sticky lg:top-8">
-            <Card className="p-6 border border-blue-100/70 shadow-xl">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">
-                    {item.name}
-                  </h1>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
-                    <IoStarOutline size={16} />
-                    4.9 · 120 reviews
-                  </div>
-                </div>
-                <Button isIconOnly variant="secondary">
-                  <IoHeartOutline size={18} />
-                </Button>
-              </div>
-
-              <div className="mt-4 text-3xl font-semibold text-gray-900">
-                ${Number(item.price).toFixed(2)}
-                <span className="text-sm text-gray-500 font-normal"> / item</span>
-              </div>
-
+            {/* Product Details */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-6">
+              <h1 className="text-xl font-semibold text-neutral-900 mb-2">
+                {item.name}
+              </h1>
               {item.description && (
-                <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-neutral-600 leading-relaxed">
                   {item.description}
                 </p>
               )}
-
-              <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-500">
-                <span className="rounded-full bg-gray-100 px-3 py-1">Visa</span>
-                <span className="rounded-full bg-gray-100 px-3 py-1">Mastercard</span>
-                <span className="rounded-full bg-gray-100 px-3 py-1">Amex</span>
-                <span className="rounded-full bg-gray-100 px-3 py-1">Apple Pay</span>
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-semibold text-neutral-900">
+                    ${Number(item.price).toFixed(2)}
+                  </span>
+                  <span className="text-sm text-neutral-500">USD</span>
+                </div>
               </div>
+            </div>
 
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <IoLockClosedOutline size={16} />
-                    Secure checkout
+            {/* Trust Badges */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <IoShieldCheckmarkOutline size={16} className="text-emerald-600" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <IoCardOutline size={16} />
-                    Stripe Elements
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">Secure payments</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      SSL encrypted checkout powered by Stripe
+                    </p>
                   </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <IoLockClosedOutline size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">Buyer protection</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Every purchase includes automatic receipts
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Checkout Form */}
+          <div className="lg:sticky lg:top-24 h-fit">
+            {status === "success" ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <IoCheckmarkCircleOutline size={28} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-emerald-900">
+                      Order confirmed
+                    </h3>
+                    <p className="text-sm text-emerald-700">Payment successful</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-white p-4 border border-emerald-200">
+                  <p className="text-sm text-neutral-700 mb-2">
+                    {statusMessage ?? "Your order has been confirmed."}
+                  </p>
+                  {orderId && (
+                    <p className="text-xs text-neutral-500 font-mono">
+                      Order ID: {orderId}
+                    </p>
+                  )}
+                </div>
+                <Link href={`/store/${slug}`} className="block mt-4">
+                  <Button variant="bordered" size="sm" className="w-full">
+                    Continue shopping
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900 mb-1">
+                    Checkout
+                  </h2>
+                  <p className="text-sm text-neutral-500">
+                    Complete your purchase securely
+                  </p>
                 </div>
 
                 {!stripePromise && (
-                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    Stripe publishable key is missing. Set{" "}
-                    <span className="font-semibold">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</span>{" "}
-                    to enable payments.
-                  </div>
-                )}
-
-                {status === "success" ? (
-                  <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm text-green-700">
-                    <div className="flex items-center gap-2 text-base font-semibold text-green-900">
-                      <IoCheckmarkCircleOutline size={20} />
-                      Payment successful
-                    </div>
-                    <p className="mt-2">
-                      {statusMessage ?? "Your order has been confirmed."}
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="text-sm text-red-700">
+                      Stripe publishable key is missing. Set{" "}
+                      <span className="font-semibold">
+                        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+                      </span>{" "}
+                      to enable payments.
                     </p>
-                    {orderId && (
-                      <p className="mt-2 text-xs text-green-800">Order ID: {orderId}</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-5 space-y-4">
-                    {status === "error" && statusMessage && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {statusMessage}
-                      </div>
-                    )}
-
-                    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">Contact</div>
-                          <div className="text-xs text-gray-500">
-                            Receipts and order updates.
-                          </div>
-                        </div>
-                        {user && (
-                          <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                            Signed in
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4 grid gap-3">
-                        {!user && (
-                          <Input
-                            type="email"
-                            label="Email address"
-                            placeholder="you@example.com"
-                            value={buyerEmail}
-                            onChange={(event) => setBuyerEmail(event.target.value)}
-                          />
-                        )}
-                        {user && (
-                          <Input type="email" label="Email address" value={buyerEmail} isReadOnly />
-                        )}
-                      </div>
-                    </div>
-
-                    {clientSecret && stripePromise ? (
-                      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                        <Elements stripe={stripePromise} options={{ clientSecret }}>
-                          <CheckoutForm
-                            buyerEmail={buyerEmail}
-                            paymentIntentId={paymentIntentId}
-                            onSuccess={() => {
-                              setStatus("success");
-                              setStatusMessage("Payment successful! Your order has been confirmed.");
-                            }}
-                            onError={(message) => {
-                              setStatus("error");
-                              setStatusMessage(message);
-                            }}
-                            onRequestNewIntent={() => {
-                              if (!item) return;
-                              const cacheKey = `checkout:${item.id}`;
-                              const idempotencyKeyStorage = `checkout:intent:${item.id}`;
-                              sessionStorage.removeItem(cacheKey);
-                              sessionStorage.removeItem(idempotencyKeyStorage);
-                              hasCreatedIntentRef.current = false;
-                              setClientSecret(null);
-                              setPaymentIntentId(null);
-                              setOrderId(null);
-                              setRetryCounter((prev) => prev + 1);
-                              setStatus("idle");
-                              setStatusMessage(null);
-                            }}
-                            isDisabled={!buyerEmail || isCreatingIntent}
-                          />
-                        </Elements>
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Spinner size="sm" />
-                          Preparing secure payment form...
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
-              </div>
-            </Card>
 
-            <Card className="p-6 border border-gray-200/60 bg-white/90">
-              <div className="flex items-start gap-3 text-sm text-gray-600">
-                <IoShieldCheckmarkOutline size={18} className="text-green-600" />
-                <div>
-                  <div className="font-semibold text-gray-900">Buyer protection</div>
-                  <p className="mt-1">
-                    Every purchase includes secure payment processing and
-                    automatic receipts.
-                  </p>
+                {status === "error" && statusMessage && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="text-sm text-red-700">{statusMessage}</p>
+                  </div>
+                )}
+
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-sm font-medium text-neutral-900 mb-3">
+                      Contact email
+                    </h3>
+                    <Input
+                      type="email"
+                      label="Email"
+                      placeholder="you@example.com"
+                      value={buyerEmail}
+                      onChange={(event) => setBuyerEmail(event.target.value)}
+                      isReadOnly={!!user}
+                      className="text-sm"
+                    />
+                    <p className="mt-2 text-xs text-neutral-500">
+                      We’ll send your receipt and updates to this email.
+                    </p>
+                  </div>
+
+                  <div className="border-t border-neutral-100 pt-4">
+                    <h3 className="text-sm font-medium text-neutral-900 mb-3">
+                      Shipping & payment
+                    </h3>
+                    {clientSecret && stripePromise ? (
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <CheckoutForm
+                          buyerEmail={buyerEmail}
+                          buyerName={buyerName}
+                          paymentIntentId={paymentIntentId}
+                          itemPrice={Number(item.price)}
+                          onSuccess={() => {
+                            setStatus("success");
+                            setStatusMessage(
+                              "Payment successful! Your order has been confirmed."
+                            );
+                          }}
+                          onError={(message) => {
+                            setStatus("error");
+                            setStatusMessage(message);
+                          }}
+                          onRequestNewIntent={() => {
+                            if (!item) return;
+                            const cacheKey = `checkout:${item.id}`;
+                            const idempotencyKeyStorage = `checkout:intent:${item.id}`;
+                            sessionStorage.removeItem(cacheKey);
+                            sessionStorage.removeItem(idempotencyKeyStorage);
+                            hasCreatedIntentRef.current = false;
+                            setClientSecret(null);
+                            setPaymentIntentId(null);
+                            setOrderId(null);
+                            setRetryCounter((prev) => prev + 1);
+                            setStatus("idle");
+                            setStatusMessage(null);
+                          }}
+                          isDisabled={!isFormComplete() || isCreatingIntent}
+                        />
+                      </Elements>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-neutral-500 py-4">
+                        <Spinner size="sm" />
+                        Preparing secure payment...
+                      </div>
+                    )}
+                  </div>
+
+                  {!isFormComplete() && (
+                    <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-4">
+                      <p className="text-sm text-neutral-600">
+                        Add your email to continue to payment
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </Card>
+            )}
           </div>
         </div>
       </div>
@@ -501,14 +532,18 @@ export default function ProductPage() {
 
 function CheckoutForm({
   buyerEmail,
+  buyerName,
   paymentIntentId,
+  itemPrice,
   onSuccess,
   onError,
   onRequestNewIntent,
   isDisabled,
 }: {
   buyerEmail: string;
+  buyerName: string;
   paymentIntentId: string | null;
+  itemPrice: number;
   onSuccess: () => void;
   onError: (message: string) => void;
   onRequestNewIntent: () => void;
@@ -520,6 +555,18 @@ function CheckoutForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isElementReady, setIsElementReady] = useState(false);
   const [elementLoadError, setElementLoadError] = useState<string | null>(null);
+  const [addressComplete, setAddressComplete] = useState(false);
+  const [addressValue, setAddressValue] = useState<{
+    name?: string;
+    address?: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    };
+  } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -527,13 +574,6 @@ function CheckoutForm({
 
     if (!isElementReady) {
       const message = "Payment form is still loading. Please try again.";
-      setErrorMessage(message);
-      onError(message);
-      return;
-    }
-
-    if (!buyerEmail) {
-      const message = "Enter an email to continue.";
       setErrorMessage(message);
       onError(message);
       return;
@@ -552,12 +592,24 @@ function CheckoutForm({
         confirmParams: {
           receipt_email: buyerEmail || undefined,
           return_url: `${window.location.origin}/checkout/success`,
+          shipping: {
+            name: addressValue?.name || buyerName,
+            address: {
+              line1: addressValue?.address?.line1,
+              line2: addressValue?.address?.line2 || undefined,
+              city: addressValue?.address?.city,
+              state: addressValue?.address?.state,
+              postal_code: addressValue?.address?.postal_code,
+              country: addressValue?.address?.country,
+            },
+          },
         },
         redirect: "always",
       });
 
       if (result.error) {
-        const message = result.error.message ?? "Payment failed. Please try again.";
+        const message =
+          result.error.message ?? "Payment failed. Please try again.";
         setErrorMessage(message);
         onError(message);
         setIsSubmitting(false);
@@ -576,8 +628,33 @@ function CheckoutForm({
     }
   };
 
+  const platformFee = itemPrice * 0.05;
+  const total = itemPrice;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <div className="mb-3 text-sm font-medium text-neutral-900">
+          Shipping address
+        </div>
+        <div className="rounded-lg border border-neutral-200 p-3">
+          <AddressElement
+            options={{
+              mode: "shipping",
+              allowedCountries: ["US", "CA", "GB", "AU"],
+            }}
+            onChange={(event) => {
+              setAddressComplete(event.complete);
+              if (event.value) {
+                setAddressValue({
+                  name: event.value.name || buyerName,
+                  address: event.value.address,
+                });
+              }
+            }}
+          />
+        </div>
+      </div>
       <PaymentElement
         onReady={() => setIsElementReady(true)}
         onLoadError={(event) => {
@@ -592,34 +669,61 @@ function CheckoutForm({
           }
         }}
       />
+      
       {elementLoadError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {elementLoadError}
         </div>
       )}
+      
       {errorMessage && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       )}
+
+      {/* Order Summary */}
+      <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-4 space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-neutral-600">Subtotal</span>
+          <span className="font-medium text-neutral-900">
+            ${itemPrice.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-neutral-600">Shipping</span>
+          <span className="font-medium text-neutral-900">Free</span>
+        </div>
+        <div className="pt-2 border-t border-neutral-200 flex items-center justify-between">
+          <span className="text-sm font-medium text-neutral-900">Total</span>
+          <span className="text-lg font-semibold text-neutral-900">
+            ${total.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
       <Button
         type="submit"
-        variant="primary"
         size="lg"
-        className="w-full"
+        className="w-full bg-neutral-900 text-white hover:bg-neutral-800"
         isDisabled={
           !stripe ||
           !elements ||
           !isElementReady ||
           isSubmitting ||
           isDisabled ||
-          !!elementLoadError
+          !!elementLoadError ||
+          !addressComplete
         }
         isLoading={isSubmitting}
       >
-        <IoCartOutline size={18} className="mr-2" />
-        Pay now
+        {isSubmitting ? "Processing..." : `Pay $${total.toFixed(2)}`}
       </Button>
+
+      <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
+        <IoLockClosedOutline size={12} />
+        <span>Secured by Stripe</span>
+      </div>
     </form>
   );
 }

@@ -23,7 +23,12 @@ import {
   IoSettingsOutline,
   IoGridOutline,
   IoEyeOutline,
+  IoTrashOutline,
   IoCreateOutline,
+  IoLinkOutline,
+  IoGlobeOutline,
+  IoLogoInstagram,
+  IoLogoTwitter,
 } from "react-icons/io5";
 import Link from "next/link";
 import AddProductModal from "@/app/components/AddProductModal";
@@ -86,7 +91,6 @@ export default function ManageStorePage() {
     description: "",
   });
 
-  // Store customization state (placeholder)
   const [storeSettings, setStoreSettings] = useState({
     primaryColor: DEFAULT_PRIMARY,
     showBranding: true,
@@ -288,21 +292,30 @@ export default function ManageStorePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const formatViews = (count: number) => {
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toString();
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <Spinner size="lg" color="default" />
       </div>
     );
   }
 
   if (error || !store) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "Store not found"}</p>
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <IoGridOutline size={24} className="text-red-600" />
+          </div>
+          <p className="text-neutral-900 font-medium mb-2">Store not found</p>
+          <p className="text-sm text-neutral-500 mb-6">{error || "Unable to load store"}</p>
           <Link href="/stores">
-            <Button>Back to Stores</Button>
+            <Button variant="secondary" size="sm">Back to Stores</Button>
           </Link>
         </div>
       </div>
@@ -310,42 +323,38 @@ export default function ManageStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="border-b border-neutral-200 bg-white sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link href="/stores">
-                <Button variant="ghost" size="sm" isIconOnly>
-                  <IoArrowBack size={20} />
-                </Button>
+                <button className="w-8 h-8 rounded-lg hover:bg-neutral-100 flex items-center justify-center transition-colors">
+                  <IoArrowBack size={18} className="text-neutral-600" />
+                </button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-lg font-semibold text-neutral-900 tracking-tight">
                   {store.name}
                 </h1>
-                <p className="text-sm text-gray-500">Store Management</p>
+                <p className="text-xs text-neutral-500">Manage store</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               {saveMessage && (
-                <span className="text-sm text-gray-600">{saveMessage}</span>
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <p className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
+                    <IoCheckmark size={14} />
+                    {saveMessage}
+                  </p>
+                </div>
               )}
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  store.isActive
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {store.isActive ? "Live" : "Inactive"}
-              </span>
               <Link href={`/store/${store.slug}`} target="_blank">
-                <Button variant="secondary" size="sm" className="gap-2">
-                  <IoEyeOutline size={18} />
-                  Preview Store
+                <Button variant="bordered" size="sm" className="gap-1.5 border-neutral-200 text-neutral-700 hover:bg-neutral-50">
+                  <IoEyeOutline size={16} />
+                  Preview
                 </Button>
               </Link>
             </div>
@@ -353,655 +362,677 @@ export default function ManageStorePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Sidebar - Quick Actions */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Store URL Card */}
-            <Card className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Store Link</h3>
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Stats & Quick Actions */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Store Link Card */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">Store link</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                  <code className="text-xs text-gray-600 flex-1 truncate">
-                    {typeof window !== "undefined" &&
-                      `${window.location.origin}/store/${store.slug}`}
+                <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-neutral-50 border border-neutral-200">
+                  <IoLinkOutline size={14} className="text-neutral-400 flex-shrink-0" />
+                  <code className="text-xs text-neutral-600 truncate flex-1 font-mono">
+                    /store/{store.slug}
                   </code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    isIconOnly
-                    onPress={copyStoreUrl}
+                  <button
+                    onClick={copyStoreUrl}
+                    className="p-1 hover:bg-neutral-200 rounded transition-colors flex-shrink-0"
                   >
                     {copied ? (
-                      <IoCheckmark size={16} className="text-green-600" />
+                      <IoCheckmark size={14} className="text-emerald-600" />
                     ) : (
-                      <IoCopy size={16} />
+                      <IoCopy size={14} className="text-neutral-500" />
                     )}
-                  </Button>
+                  </button>
                 </div>
-                <Button variant="primary" className="w-full gap-2" size="sm">
-                  Share Store
-                </Button>
               </div>
-            </Card>
+            </div>
 
-            {/* Quick Stats */}
-            <Card className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
+            {/* Stats Card */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-4">Overview</h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-500">Total Products</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {items.length}
-                  </p>
+                  <p className="text-xs text-neutral-500 mb-1">Total products</p>
+                  <p className="text-2xl font-semibold text-neutral-900">{items.length}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Active Products</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                <div className="pt-4 border-t border-neutral-100">
+                  <p className="text-xs text-neutral-500 mb-1">Active products</p>
+                  <p className="text-2xl font-semibold text-neutral-900">
                     {items.filter((i) => i.isActive).length}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Store Views</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {store.viewCount}
+                <div className="pt-4 border-t border-neutral-100">
+                  <p className="text-xs text-neutral-500 mb-1">Total views</p>
+                  <p className="text-2xl font-semibold text-neutral-900">
+                    {formatViews(store.viewCount)}
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
+
+            {/* Status Card */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">Store status</h3>
+              <div className="space-y-3">
+                <div
+                  className={`px-3 py-2 rounded-lg border ${
+                    store.isActive
+                      ? "bg-emerald-50 border-emerald-200"
+                      : "bg-neutral-100 border-neutral-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        store.isActive ? "bg-emerald-500" : "bg-neutral-400"
+                      }`}
+                    />
+                    <span className={`text-sm font-medium ${
+                      store.isActive ? "text-emerald-900" : "text-neutral-700"
+                    }`}>
+                      {store.isActive ? "Live" : "Inactive"}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${
+                    store.isActive ? "text-emerald-700" : "text-neutral-500"
+                  }`}>
+                    {store.isActive
+                      ? "Visible to customers"
+                      : "Hidden from customers"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tabs */}
-            <Card className="p-1">
-              <Tabs
-                selectedKey={activeTab}
-                onSelectionChange={(key) => setActiveTab(key as string)}
-              >
-                <Tabs.List className="w-full">
-                  <Tabs.Tab id="products" className="flex-1">
-                    <IoGridOutline size={18} />
-                    <span className="ml-2">Products</span>
+          <div className="lg:col-span-3">
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+              className="w-full"
+            >
+              {/* Tab Navigation */}
+              <div className="mb-6">
+                <Tabs.List className="inline-flex p-1 bg-neutral-100 rounded-lg">
+                  <Tabs.Tab 
+                    id="products" 
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-colors data-[selected]:bg-white data-[selected]:text-neutral-900 data-[selected]:shadow-sm text-neutral-600 hover:text-neutral-900"
+                  >
+                    <IoGridOutline size={16} className="mr-2" />
+                    Products
                   </Tabs.Tab>
-                  <Tabs.Tab id="design" className="flex-1">
-                    <IoColorPaletteOutline size={18} />
-                    <span className="ml-2">Design</span>
+                  <Tabs.Tab 
+                    id="design"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-colors data-[selected]:bg-white data-[selected]:text-neutral-900 data-[selected]:shadow-sm text-neutral-600 hover:text-neutral-900"
+                  >
+                    <IoColorPaletteOutline size={16} className="mr-2" />
+                    Design
                   </Tabs.Tab>
-                  <Tabs.Tab id="settings" className="flex-1">
-                    <IoSettingsOutline size={18} />
-                    <span className="ml-2">Settings</span>
+                  <Tabs.Tab 
+                    id="settings"
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-colors data-[selected]:bg-white data-[selected]:text-neutral-900 data-[selected]:shadow-sm text-neutral-600 hover:text-neutral-900"
+                  >
+                    <IoSettingsOutline size={16} className="mr-2" />
+                    Settings
                   </Tabs.Tab>
                 </Tabs.List>
+              </div>
 
-                {/* Products Tab */}
-                <Tabs.Panel id="products">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Products
-                      </h2>
-                      <Button
-                        variant="primary"
-                        className="gap-2"
-                        onPress={() => setIsModalOpen(true)}
-                      >
-                        <IoAdd size={20} />
-                        Add Product
-                      </Button>
+              {/* Products Tab */}
+              <Tabs.Panel id="products">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-semibold text-neutral-900">Products</h2>
+                      <p className="text-sm text-neutral-500">
+                        {items.length === 0 ? "No products yet" : `${items.length} total`}
+                      </p>
                     </div>
+                    <Button
+                      className="bg-neutral-900 text-white hover:bg-neutral-800 gap-1.5"
+                      size="sm"
+                      onPress={() => setIsModalOpen(true)}
+                    >
+                      <IoAdd size={18} />
+                      Add product
+                    </Button>
+                  </div>
 
-                    {isLoadingItems ? (
-                      <div className="text-center py-12">
-                        <Spinner size="lg" />
+                  {isLoadingItems ? (
+                    <div className="rounded-xl border border-neutral-200 bg-white p-12">
+                      <div className="flex justify-center">
+                        <Spinner size="lg" color="default" />
                       </div>
-                    ) : items.length === 0 ? (
-                      <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                        <IoGridOutline
-                          size={48}
-                          className="mx-auto text-gray-300 mb-4"
-                        />
-                        <p className="text-gray-600 mb-2">No products yet</p>
-                        <p className="text-sm text-gray-500 mb-6">
+                    </div>
+                  ) : items.length === 0 ? (
+                    <div className="rounded-xl border border-neutral-200 bg-white p-12">
+                      <div className="text-center max-w-md mx-auto">
+                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+                          <IoGridOutline size={32} className="text-neutral-400" />
+                        </div>
+                        <h3 className="text-base font-semibold text-neutral-900 mb-2">No products yet</h3>
+                        <p className="text-sm text-neutral-500 mb-6">
                           Add your first product to start selling
                         </p>
                         <Button
-                          variant="primary"
-                          className="gap-2"
+                          className="bg-neutral-900 text-white hover:bg-neutral-800 gap-2"
                           onPress={() => setIsModalOpen(true)}
                         >
-                          <IoAdd size={20} />
-                          Add Your First Product
+                          <IoAdd size={18} />
+                          Add product
                         </Button>
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {items.map((item) => (
-                          <Card key={item.id} className="overflow-hidden ">
-                            <div className="flex gap-4 p-4">
-                              {item.images.length > 0 && item.images[0]?.url ? (
-                                <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0">
-                                  <img
-                                    src={item.images[0].url}
-                                    alt={item.name}
-                                    className="w-full h-full object-cover rounded-lg"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
-                                  <IoImageOutline
-                                    size={24}
-                                    className="text-gray-400"
-                                  />
-                                </div>
-                              )}
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h3 className="font-semibold text-gray-900 truncate">
-                                    {item.name}
-                                  </h3>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${
-                                      item.isActive
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-gray-100 text-gray-800"
-                                    }`}
-                                  >
-                                    {item.isActive ? "Active" : "Inactive"}
-                                  </span>
-                                </div>
-
-                                {item.description && (
-                                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                                    {item.description}
-                                  </p>
-                                )}
-
-                                <p className="text-lg font-bold text-primary mb-3">
-                                  ${Number(item.price).toFixed(2)}
-                                </p>
-
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="flex-1"
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex-1"
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Tabs.Panel>
-
-                {/* Design Tab */}
-                <Tabs.Panel id="design">
-                  <div className="p-6 space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">
-                        Store Design
-                      </h2>
-                      <p className="text-gray-600 text-sm mb-6">
-                        Customize the look and feel of your store
-                      </p>
                     </div>
-
-                    <Card className="p-6 space-y-6">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900">
-                          Brand Kit
-                        </h3>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {items.map((item) => (
                         <div
-                          className="w-10 h-10 rounded-full border"
-                          style={{
-                            backgroundColor: storeSettings.primaryColor,
-                          }}
-                        />
-                      </div>
-
-                      <div className="grid gap-6 lg:grid-cols-2">
-                        <div className="space-y-3">
-                          <Label className="text-sm font-semibold text-gray-900">
-                            Logo Image
-                          </Label>
-                          <div className="flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden">
-                              {logoPreview || storeSettings.logoImage ? (
-                                <img
-                                  src={
-                                    logoPreview || storeSettings.logoImage || ""
-                                  }
-                                  alt="Store logo"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <IoImageOutline
-                                  size={28}
-                                  className="text-gray-400"
-                                />
-                              )}
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(event) => {
-                                  const file = event.target.files?.[0];
-                                  if (!file) return;
-                                  setLogoFile(file);
-                                  setLogoPreview(URL.createObjectURL(file));
-                                }}
+                          key={item.id}
+                          className="group rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 transition-all overflow-hidden"
+                        >
+                          {/* Product Image */}
+                          <div className="relative aspect-square bg-neutral-100">
+                            {item.images.length > 0 && item.images[0]?.url ? (
+                              <img
+                                src={item.images[0].url}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
                               />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onPress={handleLogoUpload}
-                                  isDisabled={!logoFile || isUploadingLogo}
-                                >
-                                  {isUploadingLogo
-                                    ? "Uploading..."
-                                    : "Upload Logo"}
-                                </Button>
-                                <p className="text-xs text-gray-500">
-                                  Square image works best.
-                                </p>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <IoImageOutline size={48} className="text-neutral-300" />
                               </div>
+                            )}
+                            <div className="absolute top-3 right-3">
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
+                                  item.isActive
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    item.isActive ? "bg-emerald-500" : "bg-neutral-400"
+                                  }`}
+                                />
+                                {item.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Product Info */}
+                          <div className="p-4">
+                            <h3 className="font-semibold text-neutral-900 mb-1 truncate">
+                              {item.name}
+                            </h3>
+                            {item.description && (
+                              <p className="text-xs text-neutral-500 line-clamp-2 mb-3 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+                            <p className="text-lg font-semibold text-neutral-900 mb-4">
+                              ${Number(item.price).toFixed(2)}
+                            </p>
+
+                            <div className="flex gap-2">
+                              <Button
+                                variant="bordered"
+                                size="sm"
+                                className="flex-1 border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                              >
+                                <IoCreateOutline size={16} />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="bordered"
+                                size="sm"
+                                className="border-neutral-200 text-neutral-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                              >
+                                <IoTrashOutline size={16} />
+                              </Button>
                             </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Tabs.Panel>
 
+              {/* Design Tab */}
+              <Tabs.Panel id="design">
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900 mb-1">Design</h2>
+                    <p className="text-sm text-neutral-500">
+                      Customize your store's appearance
+                    </p>
+                  </div>
+
+                  {/* Brand Assets */}
+                  <div className="rounded-xl border border-neutral-200 bg-white p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-neutral-900">Brand assets</h3>
+                      <div
+                        className="w-8 h-8 rounded-lg border border-neutral-200"
+                        style={{ backgroundColor: storeSettings.primaryColor }}
+                      />
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {/* Logo Upload */}
+                      <div className="space-y-3">
+                        <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide">
+                          Logo
+                        </Label>
                         <div className="space-y-3">
-                          <Label className="text-sm font-semibold text-gray-900">
-                            Banner Image
-                          </Label>
-                          <div className="aspect-[16/9] rounded-2xl overflow-hidden border bg-gray-100 flex items-center justify-center">
+                          <div className="w-24 h-24 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center overflow-hidden">
+                            {logoPreview || storeSettings.logoImage ? (
+                              <img
+                                src={logoPreview || storeSettings.logoImage || ""}
+                                alt="Store logo"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <IoImageOutline size={32} className="text-neutral-300" />
+                            )}
+                          </div>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (!file) return;
+                              setLogoFile(file);
+                              setLogoPreview(URL.createObjectURL(file));
+                            }}
+                            className="text-xs"
+                          />
+                          <Button
+                            variant="bordered"
+                            size="sm"
+                            onPress={handleLogoUpload}
+                            isDisabled={!logoFile || isUploadingLogo}
+                            className="w-full border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                          >
+                            {isUploadingLogo ? "Uploading..." : "Upload logo"}
+                          </Button>
+                          <p className="text-xs text-neutral-500">
+                            Square image recommended
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Banner Upload */}
+                      <div className="space-y-3">
+                        <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide">
+                          Banner
+                        </Label>
+                        <div className="space-y-3">
+                          <div className="aspect-[2/1] rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 flex items-center justify-center">
                             {bannerPreview || storeSettings.bannerImage ? (
                               <img
-                                src={
-                                  bannerPreview ||
-                                  storeSettings.bannerImage ||
-                                  ""
-                                }
+                                src={bannerPreview || storeSettings.bannerImage || ""}
                                 alt="Store banner"
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <IoImageOutline
-                                size={36}
-                                className="text-gray-400"
-                              />
+                              <IoImageOutline size={32} className="text-neutral-300" />
                             )}
                           </div>
-                          <div className="space-y-2">
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                if (!file) return;
-                                setBannerFile(file);
-                                setBannerPreview(URL.createObjectURL(file));
-                              }}
-                            />
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onPress={handleBannerUpload}
-                              isDisabled={!bannerFile || isUploadingBanner}
-                            >
-                              {isUploadingBanner
-                                ? "Uploading..."
-                                : "Upload Banner"}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {uploadError && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                          <p className="text-sm text-red-700">{uploadError}</p>
-                        </div>
-                      )}
-
-                      <div className="space-y-4">
-                        <Label className="text-sm font-semibold text-gray-900">
-                          Theme Color
-                        </Label>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <input
-                            type="color"
-                            value={storeSettings.primaryColor}
-                            onChange={(event) =>
-                              setStoreSettings((prev) => ({
-                                ...prev,
-                                primaryColor: event.target.value,
-                              }))
-                            }
-                            className="h-12 w-12 rounded-lg border border-gray-200 bg-white"
-                          />
                           <Input
-                            value={storeSettings.primaryColor}
-                            onChange={(event) =>
-                              setStoreSettings((prev) => ({
-                                ...prev,
-                                primaryColor: event.target.value,
-                              }))
-                            }
+                            type="file"
+                            accept="image/*"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (!file) return;
+                              setBannerFile(file);
+                              setBannerPreview(URL.createObjectURL(file));
+                            }}
+                            className="text-xs"
                           />
-                          <div className="flex gap-2">
-                            {[
-                              "#3b82f6",
-                              "#10b981",
-                              "#f59e0b",
-                              "#ef4444",
-                              "#8b5cf6",
-                            ].map((color) => (
-                              <button
-                                key={color}
-                                onClick={() =>
-                                  setStoreSettings((prev) => ({
-                                    ...prev,
-                                    primaryColor: color,
-                                  }))
-                                }
-                                className={`h-10 w-10 rounded-lg border-2 ${
-                                  storeSettings.primaryColor === color
-                                    ? "border-gray-900"
-                                    : "border-transparent"
-                                }`}
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <Button
-                          variant="primary"
-                          onPress={handleSaveDesign}
-                          isDisabled={isSaving}
-                        >
-                          {isSaving ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Spinner size="sm" color="current" />
-                              Saving
-                            </span>
-                          ) : (
-                            "Save Design"
-                          )}
-                        </Button>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label className="font-semibold text-gray-900">
-                            Social Links
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            Show social links on your storefront
+                          <Button
+                            variant="bordered"
+                            size="sm"
+                            onPress={handleBannerUpload}
+                            isDisabled={!bannerFile || isUploadingBanner}
+                            className="w-full border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                          >
+                            {isUploadingBanner ? "Uploading..." : "Upload banner"}
+                          </Button>
+                          <p className="text-xs text-neutral-500">
+                            16:9 aspect ratio recommended
                           </p>
                         </div>
-                        <Switch
-                          isSelected={storeSettings.showSocialLinks}
-                          onChange={(checked) =>
+                      </div>
+                    </div>
+
+                    {uploadError && (
+                      <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                        <p className="text-xs text-red-700">{uploadError}</p>
+                      </div>
+                    )}
+
+                    {/* Theme Color */}
+                    <div className="space-y-3 pt-6 border-t border-neutral-100">
+                      <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide">
+                        Theme color
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={storeSettings.primaryColor}
+                          onChange={(event) =>
                             setStoreSettings((prev) => ({
                               ...prev,
-                              showSocialLinks: checked,
+                              primaryColor: event.target.value,
                             }))
                           }
-                        >
-                          <Switch.Control>
-                            <Switch.Thumb />
-                          </Switch.Control>
-                        </Switch>
+                          className="h-10 w-10 rounded-lg border border-neutral-200 cursor-pointer"
+                        />
+                        <Input
+                          value={storeSettings.primaryColor}
+                          onChange={(event) =>
+                            setStoreSettings((prev) => ({
+                              ...prev,
+                              primaryColor: event.target.value,
+                            }))
+                          }
+                          className="flex-1 max-w-xs font-mono text-sm"
+                        />
                       </div>
+                      <div className="flex gap-2">
+                        {["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"].map((color) => (
+                          <button
+                            key={color}
+                            onClick={() =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                primaryColor: color,
+                              }))
+                            }
+                            className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                              storeSettings.primaryColor === color
+                                ? "border-neutral-900 scale-110"
+                                : "border-neutral-200 hover:scale-105"
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-                      {storeSettings.showSocialLinks && (
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-1">
-                            <Label className="text-xs uppercase tracking-wide text-gray-500">
-                              Website
-                            </Label>
-                            <Input
-                              value={storeSettings.websiteUrl}
-                              onChange={(event) =>
-                                setStoreSettings((prev) => ({
-                                  ...prev,
-                                  websiteUrl: event.target.value,
-                                }))
-                              }
-                              placeholder="https://yourdomain.com"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs uppercase tracking-wide text-gray-500">
-                              Instagram
-                            </Label>
-                            <Input
-                              value={storeSettings.instagramUrl}
-                              onChange={(event) =>
-                                setStoreSettings((prev) => ({
-                                  ...prev,
-                                  instagramUrl: event.target.value,
-                                }))
-                              }
-                              placeholder="https://instagram.com/yourstore"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs uppercase tracking-wide text-gray-500">
-                              Twitter / X
-                            </Label>
-                            <Input
-                              value={storeSettings.twitterUrl}
-                              onChange={(event) =>
-                                setStoreSettings((prev) => ({
-                                  ...prev,
-                                  twitterUrl: event.target.value,
-                                }))
-                              }
-                              placeholder="https://x.com/yourstore"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </Card>
+                    <div className="flex justify-end pt-4 border-t border-neutral-100">
+                      <Button
+                        className="bg-neutral-900 text-white hover:bg-neutral-800"
+                        size="sm"
+                        onPress={handleSaveDesign}
+                        isDisabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save design"}
+                      </Button>
+                    </div>
                   </div>
-                </Tabs.Panel>
 
-                {/* Settings Tab */}
-                <Tabs.Panel id="settings">
-                  <div className="p-6 space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">
-                        Store Settings
-                      </h2>
-                      <p className="text-gray-600 text-sm mb-6">
-                        Configure your store features and preferences
+                  {/* Social Links */}
+                  <div className="rounded-xl border border-neutral-200 bg-white p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-neutral-900">Social links</h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Display on your storefront
+                        </p>
+                      </div>
+                      <Switch
+                        isSelected={storeSettings.showSocialLinks}
+                        onChange={(checked) =>
+                          setStoreSettings((prev) => ({
+                            ...prev,
+                            showSocialLinks: checked,
+                          }))
+                        }
+                      >
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch>
+                    </div>
+
+                    {storeSettings.showSocialLinks && (
+                      <div className="grid gap-4 pt-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide flex items-center gap-1.5">
+                            <IoGlobeOutline size={14} />
+                            Website
+                          </Label>
+                          <Input
+                            value={storeSettings.websiteUrl}
+                            onChange={(event) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                websiteUrl: event.target.value,
+                              }))
+                            }
+                            placeholder="https://yourdomain.com"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide flex items-center gap-1.5">
+                            <IoLogoInstagram size={14} />
+                            Instagram
+                          </Label>
+                          <Input
+                            value={storeSettings.instagramUrl}
+                            onChange={(event) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                instagramUrl: event.target.value,
+                              }))
+                            }
+                            placeholder="https://instagram.com/yourstore"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide flex items-center gap-1.5">
+                            <IoLogoTwitter size={14} />
+                            Twitter / X
+                          </Label>
+                          <Input
+                            value={storeSettings.twitterUrl}
+                            onChange={(event) =>
+                              setStoreSettings((prev) => ({
+                                ...prev,
+                                twitterUrl: event.target.value,
+                              }))
+                            }
+                            placeholder="https://x.com/yourstore"
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Tabs.Panel>
+
+              {/* Settings Tab */}
+              <Tabs.Panel id="settings">
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900 mb-1">Settings</h2>
+                    <p className="text-sm text-neutral-500">
+                      Configure your store preferences
+                    </p>
+                  </div>
+
+                  {/* Store Info */}
+                  <div className="rounded-xl border border-neutral-200 bg-white p-6 space-y-4">
+                    <h3 className="text-sm font-semibold text-neutral-900">Store information</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide">
+                          Store name
+                        </Label>
+                        <Input
+                          value={storeInfo.name}
+                          onChange={(event) =>
+                            setStoreInfo((prev) => ({
+                              ...prev,
+                              name: event.target.value,
+                            }))
+                          }
+                          placeholder="Your store name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-neutral-700 uppercase tracking-wide">
+                          Description
+                        </Label>
+                        <TextArea
+                          value={storeInfo.description}
+                          onChange={(event) =>
+                            setStoreInfo((prev) => ({
+                              ...prev,
+                              description: event.target.value,
+                            }))
+                          }
+                          placeholder="Tell customers about your brand"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-4 border-t border-neutral-100">
+                      <Button
+                        className="bg-neutral-900 text-white hover:bg-neutral-800"
+                        size="sm"
+                        onPress={handleSaveInfo}
+                        isDisabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save info"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="rounded-xl border border-neutral-200 bg-white p-6 space-y-6">
+                    <h3 className="text-sm font-semibold text-neutral-900">Features</h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900">Platform branding</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Show "Powered by" in footer
+                        </p>
+                      </div>
+                      <Switch
+                        isSelected={storeSettings.showBranding}
+                        onChange={(checked) =>
+                          setStoreSettings((prev) => ({
+                            ...prev,
+                            showBranding: checked,
+                          }))
+                        }
+                      >
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-6 border-t border-neutral-100">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900">Product reviews</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Allow customer reviews
+                        </p>
+                      </div>
+                      <Switch
+                        isSelected={storeSettings.enableReviews}
+                        onChange={(checked) =>
+                          setStoreSettings((prev) => ({
+                            ...prev,
+                            enableReviews: checked,
+                          }))
+                        }
+                      >
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch>
+                    </div>
+
+                    <div className="pt-6 border-t border-neutral-100">
+                      <Label className="text-sm font-medium text-neutral-900 mb-3 block">
+                        Visibility
+                      </Label>
+                      <div className="flex gap-3">
+                        <Button
+                          variant={store.isActive ? "primary" : "bordered"}
+                          size="sm"
+                          onPress={() => handleStatusChange(true)}
+                          className={
+                            store.isActive
+                              ? "bg-neutral-900 text-white"
+                              : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                          }
+                        >
+                          Active
+                        </Button>
+                        <Button
+                          variant={!store.isActive ? "primary" : "bordered"}
+                          size="sm"
+                          onPress={() => handleStatusChange(false)}
+                          className={
+                            !store.isActive
+                              ? "bg-neutral-900 text-white"
+                              : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                          }
+                        >
+                          Inactive
+                        </Button>
+                      </div>
+                      <p className="text-xs text-neutral-500 mt-3">
+                        {store.isActive
+                          ? "Your store is live and visible to customers"
+                          : "Your store is hidden from customers"}
                       </p>
                     </div>
 
-                    <Card className="p-6 space-y-4">
-                      <h3 className="font-semibold text-gray-900">
-                        Store Info
-                      </h3>
-                      <div className="grid gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-xs uppercase tracking-wide text-gray-500">
-                            Store Name
-                          </Label>
-                          <Input
-                            value={storeInfo.name}
-                            onChange={(event) =>
-                              setStoreInfo((prev) => ({
-                                ...prev,
-                                name: event.target.value,
-                              }))
-                            }
-                            placeholder="Your store name"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs uppercase tracking-wide text-gray-500">
-                            Description
-                          </Label>
-                          <TextArea
-                            value={storeInfo.description}
-                            onChange={(event) =>
-                              setStoreInfo((prev) => ({
-                                ...prev,
-                                description: event.target.value,
-                              }))
-                            }
-                            placeholder="Tell shoppers about your brand"
-                            rows={4}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="primary"
-                          onPress={handleSaveInfo}
-                          isDisabled={isSaving}
-                        >
-                          {isSaving ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Spinner size="sm" color="current" />
-                              Saving
-                            </span>
-                          ) : (
-                            "Save Info"
-                          )}
-                        </Button>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6 space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label className="font-semibold text-gray-900">
-                            Show Branding
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            Display "Powered by YourApp" in footer
-                          </p>
-                        </div>
-                        <Switch
-                          isSelected={storeSettings.showBranding}
-                          onChange={(checked) =>
-                            setStoreSettings((prev) => ({
-                              ...prev,
-                              showBranding: checked,
-                            }))
-                          }
-                        >
-                          <Switch.Control>
-                            <Switch.Thumb />
-                          </Switch.Control>
-                        </Switch>
-                      </div>
-
-                      <div className="border-t pt-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <Label className="font-semibold text-gray-900">
-                              Enable Reviews
-                            </Label>
-                            <p className="text-sm text-gray-500">
-                              Allow customers to leave product reviews
-                            </p>
-                          </div>
-                          <Switch
-                            isSelected={storeSettings.enableReviews}
-                            onChange={(checked) =>
-                              setStoreSettings((prev) => ({
-                                ...prev,
-                                enableReviews: checked,
-                              }))
-                            }
-                          >
-                            <Switch.Control>
-                              <Switch.Thumb />
-                            </Switch.Control>
-                          </Switch>
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-6">
-                        <Label className="font-semibold text-gray-900 mb-3 block">
-                          Store Status
-                        </Label>
-                        <div className="flex gap-3">
-                          <Button
-                            variant={store.isActive ? "primary" : "secondary"}
-                            onPress={() => handleStatusChange(true)}
-                          >
-                            Active
-                          </Button>
-                          <Button
-                            variant={!store.isActive ? "primary" : "secondary"}
-                            onPress={() => handleStatusChange(false)}
-                          >
-                            Inactive
-                          </Button>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-2">
-                          {store.isActive
-                            ? "Your store is live and visible to customers"
-                            : "Your store is hidden from customers"}
-                        </p>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <Button
-                          variant="primary"
-                          onPress={handleSaveDesign}
-                          isDisabled={isSaving}
-                        >
-                          {isSaving ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Spinner size="sm" color="current" />
-                              Saving
-                            </span>
-                          ) : (
-                            "Save Preferences"
-                          )}
-                        </Button>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6 bg-red-50 border-red-200">
-                      <h3 className="font-semibold text-red-900 mb-2">
-                        Danger Zone
-                      </h3>
-                      <p className="text-sm text-red-700 mb-4">
-                        Permanently delete this store and all its products
-                      </p>
-                      <Button variant="ghost" className="text-red-600">
-                        Delete Store
+                    <div className="flex justify-end pt-4 border-t border-neutral-100">
+                      <Button
+                        className="bg-neutral-900 text-white hover:bg-neutral-800"
+                        size="sm"
+                        onPress={handleSaveDesign}
+                        isDisabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save preferences"}
                       </Button>
-                    </Card>
+                    </div>
                   </div>
-                </Tabs.Panel>
-              </Tabs>
-            </Card>
+
+                  {/* Danger Zone */}
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+                    <h3 className="text-sm font-semibold text-red-900 mb-2">Delete store</h3>
+                    <p className="text-xs text-red-700 mb-4">
+                      Permanently delete this store and all products. This action cannot be undone.
+                    </p>
+                    <Button 
+                      variant="bordered" 
+                      size="sm"
+                      className="border-red-300 text-red-700 hover:bg-red-100"
+                    >
+                      Delete store
+                    </Button>
+                  </div>
+                </div>
+              </Tabs.Panel>
+            </Tabs>
           </div>
         </div>
       </div>
