@@ -502,11 +502,7 @@ export default function DashboardPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <IoCashOutline className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
+           
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 Revenue
@@ -518,11 +514,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                <IoCartOutline className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
+          
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 Orders
@@ -532,11 +524,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center">
-                <IoTrendingUpOutline className="w-5 h-5 text-violet-600" />
-              </div>
-            </div>
+            
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 Avg order
@@ -548,11 +536,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-                <IoStorefrontOutline className="w-5 h-5 text-amber-600" />
-              </div>
-            </div>
+          
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 Platform fees
