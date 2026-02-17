@@ -400,7 +400,7 @@ export default function DashboardPage() {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white px-3 py-2 rounded-lg border border-neutral-200 shadow-lg">
+        <div className="bg-white px-3 py-2 rounded-lg  shadow-lg">
           <p className="text-xs font-medium text-neutral-900">{payload[0].payload.date}</p>
           <p className="text-sm font-semibold text-neutral-900 mt-1">
             ${payload[0].value.toFixed(2)}
@@ -425,15 +425,15 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+      <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" color="default" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="min-h-screen ">
+      <div className="max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight mb-2">
@@ -450,7 +450,7 @@ export default function DashboardPage() {
               onSelectionChange={(key) => setSelectedStore(key as string)}
             >
               <Label className="text-xs font-medium text-neutral-700 mb-1.5">Store</Label>
-              <Select.Trigger className="min-w-[180px] h-9 text-sm bg-white border border-neutral-200 rounded-lg px-3 hover:border-neutral-300 transition-colors">
+              <Select.Trigger className="min-w-[180px] h-9 text-sm bg-white  rounded-lg px-3 hover:border-neutral-300 transition-colors">
                 <Select.Value />
                 <IoChevronDown size={16} className="text-neutral-400" />
               </Select.Trigger>
@@ -475,7 +475,7 @@ export default function DashboardPage() {
               onSelectionChange={(key) => setDateRange(key as string)}
             >
               <Label className="text-xs font-medium text-neutral-700 mb-1.5">Period</Label>
-              <Select.Trigger className="min-w-[180px] h-9 text-sm bg-white border border-neutral-200 rounded-lg px-3 hover:border-neutral-300 transition-colors">
+              <Select.Trigger className="min-w-[180px] h-9 text-sm bg-white  rounded-lg px-3 hover:border-neutral-300 transition-colors">
                 <Select.Value />
                 <IoChevronDown size={16} className="text-neutral-400" />
               </Select.Trigger>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl border border-neutral-200 bg-white p-5">
+          <div className="rounded-xl  bg-white p-5">
            
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
@@ -513,7 +513,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-5">
+          <div className="rounded-xl  bg-white p-5">
           
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
@@ -523,7 +523,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-5">
+          <div className="rounded-xl  bg-white p-5">
             
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
@@ -535,7 +535,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-5">
+          <div className="rounded-xl  bg-white p-5">
           
             <div className="space-y-1">
               <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
@@ -551,7 +551,7 @@ export default function DashboardPage() {
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Revenue Chart */}
-          <div className="lg:col-span-2 rounded-xl border border-neutral-200 bg-white p-6">
+          <div className="lg:col-span-2 rounded-xl  bg-white p-6">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-neutral-900">Revenue</h3>
               <p className="text-xs text-neutral-500 mt-0.5">Daily revenue over time</p>
@@ -600,7 +600,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Order Status */}
-          <div className="rounded-xl border border-neutral-200 bg-white p-6">
+          <div className="rounded-xl  bg-white p-6">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-neutral-900">Order status</h3>
               <p className="text-xs text-neutral-500 mt-0.5">Breakdown by status</p>
@@ -641,7 +641,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Products */}
-        <div className="rounded-xl border border-neutral-200 bg-white p-6 mb-6">
+        <div className="rounded-xl  bg-white p-6 mb-6">
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-900">Top products</h3>
             <p className="text-xs text-neutral-500 mt-0.5">Best selling items by revenue</p>
@@ -661,7 +661,7 @@ export default function DashboardPage() {
                   <div key={product.name}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-neutral-200">
+                        <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0 overflow-hidden ">
                           {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
@@ -701,7 +701,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Shipping Heatmap */}
-        <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+        <div className="rounded-xl  bg-white overflow-hidden">
           <div className="p-6 border-b border-neutral-100">
             <div className="flex items-center justify-between">
               <div>
@@ -719,7 +719,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3">
             {/* Map */}
-            <div className="lg:col-span-2 h-80 bg-neutral-50">
+            <div className="lg:col-span-2 h-80 ">
               {mapPoints.length > 0 ? (
                 <Map
                   initialViewState={{
@@ -803,7 +803,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Location Breakdown */}
-            <div className="p-6 bg-neutral-50 border-l border-neutral-100">
+            <div className="p-6  border-l border-neutral-100">
               <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wide mb-4">
                 Top locations
               </h4>

@@ -130,7 +130,7 @@ export default function StoresPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center ">
         <Spinner size="lg" color="default" />
       </div>
     );
@@ -138,7 +138,7 @@ export default function StoresPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center ">
         <div className="text-center max-w-md">
           <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <IoStorefront size={24} className="text-red-600" />
@@ -154,7 +154,7 @@ export default function StoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Payment Setup Banner */}
         {paymentSetupNeeded && stores.length > 0 && (
@@ -209,7 +209,7 @@ export default function StoresPage() {
 
         {/* Empty State */}
         {stores.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-12">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-12">
             <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
               <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mb-4">
                 <IoStorefront size={32} className="text-neutral-400" />
@@ -235,7 +235,7 @@ export default function StoresPage() {
             {stores.map((store) => (
               <div
                 key={store.id}
-                className="group rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 transition-all overflow-hidden"
+                className="group rounded-3xl shadow-lg bg-white hover:border-neutral-300 transition-all overflow-hidden"
               >
                 {/* Store Preview/Banner */}
                 <div className="relative h-32 bg-gradient-to-br from-neutral-100 to-neutral-50 overflow-hidden">
@@ -320,7 +320,7 @@ export default function StoresPage() {
 
                   {/* URL Section */}
                   <div className="mb-4">
-                    <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-neutral-50 border border-neutral-200 group/url hover:border-neutral-300 transition-colors">
+                    <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg  border border-neutral-200 group/url hover:border-neutral-300 transition-colors">
                       <IoLinkOutline size={14} className="text-neutral-400 flex-shrink-0" />
                       <code className="text-xs text-neutral-600 truncate flex-1 font-mono">
                         /store/{store.slug}
@@ -351,7 +351,7 @@ export default function StoresPage() {
                     <Link href={`/store/${store.slug}`}>
                       <Button
                         variant="bordered"
-                        className="border-neutral-200 text-neutral-700 hover:bg-neutral-50 text-xs h-9 px-3"
+                        className="border-neutral-200 text-neutral-700 hover: text-xs h-9 px-3"
                       >
                         View
                       </Button>

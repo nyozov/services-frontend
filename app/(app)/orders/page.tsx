@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Card, Spinner, Button, ScrollShadow } from "@heroui/react";
+import { Card, Spinner, Button, ScrollShadow, Input } from "@heroui/react";
 import { 
   IoClose, 
   IoRefreshOutline, 
@@ -14,7 +14,9 @@ import {
   IoCashOutline,
   IoImageOutline,
   IoStorefrontOutline,
-  IoCalendarOutline,
+  IoSearchOutline,
+  IoChevronBackOutline,
+  IoChevronForwardOutline,
 } from "react-icons/io5";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -57,6 +59,8 @@ interface Order {
   };
 }
 
+const ORDERS_PER_PAGE = 20;
+
 export default function OrdersPage() {
   const { getToken } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -73,25 +77,12 @@ export default function OrdersPage() {
   const [refundSuccess, setRefundSuccess] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
 
+  // Filters and search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api";
-
-  const stats = useMemo(() => {
-    const totals = orders.reduce(
-      (acc, order) => {
-        acc.gross += Number(order.amount) || 0;
-        acc.refunded += Number(order.refundAmount) || 0;
-        return acc;
-      },
-      { gross: 0, refunded: 0 }
-    );
-
-    return {
-      count: orders.length,
-      gross: totals.gross,
-      refunded: totals.refunded,
-      net: totals.gross - totals.refunded,
-    };
-  }, [orders]);
 
   useEffect(() => {
     fetchOrders();
@@ -124,6 +115,69 @@ export default function OrdersPage() {
       setIsLoading(false);
     }
   };
+
+  // Action items
+  const actionItems = useMemo(() => {
+    const now = new Date();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    
+    const needsAttention = orders.filter(o => {
+      const orderDate = new Date(o.createdAt);
+      return o.status === 'paid' && orderDate < threeDaysAgo;
+    });
+
+    const recentOrders = orders.filter(o => {
+      const orderDate = new Date(o.createdAt);
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      return o.status === 'paid' && orderDate > oneDayAgo;
+    });
+
+    const pendingOrders = orders.filter(o => o.status === 'pending');
+
+    return {
+      needsAttention,
+      recentOrders,
+      pendingOrders,
+    };
+  }, [orders]);
+
+  // Filtered and searched orders
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(o => o.status === statusFilter);
+    }
+
+    // Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(o => 
+        o.item.name.toLowerCase().includes(query) ||
+        o.buyerEmail.toLowerCase().includes(query) ||
+        o.buyerName?.toLowerCase().includes(query) ||
+        o.shippingAddress?.name?.toLowerCase().includes(query) ||
+        o.id.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [orders, statusFilter, searchQuery]);
+
+  // Pagination
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+    const endIndex = startIndex + ORDERS_PER_PAGE;
+    return filteredOrders.slice(startIndex, endIndex);
+  }, [filteredOrders, currentPage]);
+
+  const totalPages = Math.ceil(filteredOrders.length / ORDERS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const handleRowClick = (order: Order) => {
     setSelectedOrder(order);
@@ -222,12 +276,12 @@ export default function OrdersPage() {
       pending: "bg-amber-500",
       paid: "bg-emerald-500",
       shipped: "bg-blue-500",
-      completed: "bg-neutral-500",
+      completed: "0",
       refunded: "bg-red-500",
       partially_refunded: "bg-orange-500",
       cancelled: "bg-neutral-400",
     };
-    return colors[status] || "bg-neutral-500";
+    return colors[status] || "0";
   };
 
   const formatDate = (dateString: string) => {
@@ -250,7 +304,7 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+      <div className="flex items-center justify-center min-h-screen ">
         <Spinner size="lg" color="default" />
       </div>
     );
@@ -258,7 +312,7 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
+      <div className="min-h-screen  flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <IoAlertCircle size={24} className="text-red-600" />
@@ -275,7 +329,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen ">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="mb-6">
@@ -287,160 +341,316 @@ export default function OrdersPage() {
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="rounded-xl border border-neutral-200 bg-white p-4">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
-                Total orders
-              </p>
-              <p className="text-2xl font-semibold text-neutral-900">{stats.count}</p>
+          {/* Action Items */}
+          {orders.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Needs Attention */}
+              <div className="rounded-xl bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-amber-900 uppercase tracking-wide mb-1">
+                      Needs attention
+                    </p>
+                    <p className="text-2xl font-semibold text-amber-900 mb-1">
+                      {actionItems.needsAttention.length}
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Orders over 3 days old
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Orders */}
+              <div className="rounded-xl bg-blue-50 p-4">
+                <div className="flex items-start gap-3">
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-blue-900 uppercase tracking-wide mb-1">
+                      Last 24 hours
+                    </p>
+                    <p className="text-2xl font-semibold text-blue-900 mb-1">
+                      {actionItems.recentOrders.length}
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      New orders to process
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pending */}
+              <div className="rounded-xl  bg-white p-4">
+                <div className="flex items-start gap-3">
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
+                      Pending payment
+                    </p>
+                    <p className="text-2xl font-semibold text-neutral-900 mb-1">
+                      {actionItems.pendingOrders.length}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      Awaiting completion
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-4">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
-                Gross revenue
-              </p>
-              <p className="text-2xl font-semibold text-neutral-900">
-                {currencyFormatter.format(stats.gross)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-4">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
-                Refunded
-              </p>
-              <p className="text-2xl font-semibold text-red-600">
-                {currencyFormatter.format(stats.refunded)}
-              </p>
+          )}
+
+          {/* Filters & Search */}
+          <div className="rounded-xl  bg-white p-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1">
+                <div className="relative">
+                  <IoSearchOutline 
+                    size={16} 
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search orders, customers, products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 text-sm  rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "paid", label: "Paid" },
+                  { value: "pending", label: "Pending" },
+                  { value: "shipped", label: "Shipped" },
+                  { value: "refunded", label: "Refunded" },
+                ].map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={() => setStatusFilter(status.value)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      statusFilter === status.value
+                        ? "bg-neutral-900 text-white"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Orders Table */}
-          {orders.length === 0 ? (
-            <div className="rounded-2xl border border-neutral-200 bg-white p-12">
+          {filteredOrders.length === 0 ? (
+            <div className="rounded-2xl  bg-white p-12">
               <div className="text-center max-w-md mx-auto">
                 <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                   <IoReceiptOutline size={32} className="text-neutral-400" />
                 </div>
                 <h3 className="text-base font-semibold text-neutral-900 mb-2">
-                  No orders yet
+                  {searchQuery || statusFilter !== "all" ? "No orders found" : "No orders yet"}
                 </h3>
                 <p className="text-sm text-neutral-500">
-                  Orders will appear here when customers make purchases
+                  {searchQuery || statusFilter !== "all" 
+                    ? "Try adjusting your search or filters" 
+                    : "Orders will appear here when customers make purchases"}
                 </p>
+                {(searchQuery || statusFilter !== "all") && (
+                  <Button
+                    onPress={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                    }}
+                    variant="bordered"
+                    size="sm"
+                    className="mt-4"
+                  >
+                    Clear filters
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-neutral-200">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider bg-neutral-50">
-                        Product
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider bg-neutral-50">
-                        Customer
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider bg-neutral-50">
-                        Amount
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider bg-neutral-50">
-                        Status
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider bg-neutral-50">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100">
-                    {orders.map((order) => {
-                      const productImage = order.item.images?.[0]?.url;
-                      
-                      return (
-                        <tr
-                          key={order.id}
-                          onClick={() => handleRowClick(order)}
-                          className="hover:bg-neutral-50 cursor-pointer transition-colors"
-                        >
-                          {/* Product */}
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex-shrink-0 overflow-hidden">
-                                {productImage ? (
-                                  <img
-                                    src={productImage}
-                                    alt={order.item.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <IoImageOutline size={16} className="text-neutral-300" />
-                                  </div>
+            <>
+              <div className="rounded-xl  bg-white overflow-hidden mb-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider ">
+                          Product
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider ">
+                          Customer
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider ">
+                          Amount
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider ">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-neutral-500 uppercase tracking-wider ">
+                          Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {paginatedOrders.map((order) => {
+                        const productImage = order.item.images?.[0]?.url;
+                        
+                        return (
+                          <tr
+                            key={order.id}
+                            onClick={() => handleRowClick(order)}
+                            className="hover: cursor-pointer transition-colors"
+                          >
+                            {/* Product */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-neutral-100 flex-shrink-0 overflow-hidden">
+                                  {productImage ? (
+                                    <img
+                                      src={productImage}
+                                      alt={order.item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <IoImageOutline size={16} className="text-neutral-300" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-neutral-900 truncate">
+                                    {order.item.name}
+                                  </p>
+                                  <p className="text-xs text-neutral-500 truncate">
+                                    {order.item.store.name}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Customer */}
+                            <td className="py-3 px-4">
+                              <div>
+                                <p className="text-sm font-medium text-neutral-900">
+                                  {order.shippingAddress?.name || order.buyerName || "—"}
+                                </p>
+                                <p className="text-xs text-neutral-500">{order.buyerEmail}</p>
+                              </div>
+                            </td>
+
+                            {/* Amount */}
+                            <td className="py-3 px-4">
+                              <div>
+                                <p className="text-sm font-semibold text-neutral-900">
+                                  {currencyFormatter.format(Number(order.amount))}
+                                </p>
+                                {order.refundAmount && (
+                                  <p className="text-xs text-red-600">
+                                    -{currencyFormatter.format(Number(order.refundAmount))} refunded
+                                  </p>
                                 )}
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-neutral-900 truncate">
-                                  {order.item.name}
-                                </p>
-                                <p className="text-xs text-neutral-500 truncate">
-                                  {order.item.store.name}
-                                </p>
+                            </td>
+
+                            {/* Status */}
+                            <td className="py-3 px-4">
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${getStatusBadge(order.status)}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(order.status)}`} />
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
+                              </span>
+                            </td>
+
+                            {/* Date */}
+                            <td className="py-3 px-4">
+                              <div className="text-sm text-neutral-600">
+                                <p>{formatDate(order.createdAt)}</p>
+                                <p className="text-xs text-neutral-400">{formatTime(order.createdAt)}</p>
                               </div>
-                            </div>
-                          </td>
-
-                          {/* Customer */}
-                          <td className="py-3 px-4">
-                            <div>
-                              <p className="text-sm font-medium text-neutral-900">
-                                {order.shippingAddress?.name || order.buyerName || "—"}
-                              </p>
-                              <p className="text-xs text-neutral-500">{order.buyerEmail}</p>
-                            </div>
-                          </td>
-
-                          {/* Amount */}
-                          <td className="py-3 px-4">
-                            <div>
-                              <p className="text-sm font-semibold text-neutral-900">
-                                {currencyFormatter.format(Number(order.amount))}
-                              </p>
-                              {order.refundAmount && (
-                                <p className="text-xs text-red-600">
-                                  -{currencyFormatter.format(Number(order.refundAmount))} refunded
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${getStatusBadge(order.status)}`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(order.status)}`} />
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
-                            </span>
-                          </td>
-
-                          {/* Date */}
-                          <td className="py-3 px-4">
-                            <div className="text-sm text-neutral-600">
-                              <p>{formatDate(order.createdAt)}</p>
-                              <p className="text-xs text-neutral-400">{formatTime(order.createdAt)}</p>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl  bg-white">
+                  <div className="text-sm text-neutral-500">
+                    Showing {((currentPage - 1) * ORDERS_PER_PAGE) + 1} to{" "}
+                    {Math.min(currentPage * ORDERS_PER_PAGE, filteredOrders.length)} of{" "}
+                    {filteredOrders.length} orders
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg  hover: disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <IoChevronBackOutline size={16} className="text-neutral-600" />
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          // Show first, last, current, and adjacent pages
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 1
+                          );
+                        })
+                        .map((page, index, array) => {
+                          // Add ellipsis
+                          const prevPage = array[index - 1];
+                          const showEllipsis = prevPage && page - prevPage > 1;
+                          
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsis && (
+                                <span className="px-2 text-neutral-400">...</span>
+                              )}
+                              <button
+                                onClick={() => setCurrentPage(page)}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                  currentPage === page
+                                    ? "bg-neutral-900 text-white"
+                                    : "text-neutral-600 hover:bg-neutral-100"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg  hover: disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <IoChevronForwardOutline size={16} className="text-neutral-600" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Order Details Drawer */}
+      {/* Order Details Drawer - Same as before */}
       <div
         className={`fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
@@ -448,8 +658,7 @@ export default function OrdersPage() {
       >
         {selectedOrder && (
           <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="px-6 py-4 border-b bg-neutral-50 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-900">Order details</h2>
                 <p className="text-xs text-neutral-500 font-mono mt-0.5">
@@ -464,9 +673,7 @@ export default function OrdersPage() {
               </button>
             </div>
 
-            {/* Content */}
             <ScrollShadow className="flex-1 p-6 space-y-6" hideScrollBar>
-              {/* Status Badge */}
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${getStatusBadge(selectedOrder.status)}`}
@@ -476,12 +683,11 @@ export default function OrdersPage() {
                 </span>
               </div>
 
-              {/* Product */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
                   Product
                 </h3>
-                <div className="rounded-xl border border-neutral-200 overflow-hidden bg-white">
+                <div className="rounded-xl  overflow-hidden bg-white">
                   {selectedOrder.item.images?.[0]?.url && (
                     <div className="aspect-square bg-neutral-100">
                       <img
@@ -506,12 +712,11 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Customer */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
                   Customer
                 </h3>
-                <div className="rounded-lg bg-neutral-50 p-4 space-y-2">
+                <div className="rounded-lg  p-4 space-y-2">
                   <div className="flex items-center gap-2 text-sm text-neutral-700">
                     <IoPersonOutline size={16} className="text-neutral-400" />
                     <span>{selectedOrder.shippingAddress?.name || selectedOrder.buyerName || "No name provided"}</span>
@@ -523,13 +728,12 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Shipping Address */}
               {selectedOrder.shippingAddress?.address && (
                 <div className="space-y-3">
                   <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
                     Shipping address
                   </h3>
-                  <div className="rounded-lg bg-neutral-50 p-4">
+                  <div className="rounded-lg  p-4">
                     <div className="text-sm text-neutral-700 space-y-1">
                       <p className="font-medium text-neutral-900">
                         {selectedOrder.shippingAddress.name || selectedOrder.buyerName || "No name"}
@@ -564,12 +768,11 @@ export default function OrdersPage() {
                 </div>
               )}
 
-              {/* Payment Breakdown */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
                   Payment
                 </h3>
-                <div className="rounded-lg bg-neutral-50 p-4 space-y-3">
+                <div className="rounded-lg  p-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-neutral-600">Order total</span>
                     <span className="font-semibold text-neutral-900">
@@ -601,7 +804,6 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Timeline */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
                   Timeline
@@ -636,8 +838,7 @@ export default function OrdersPage() {
               </div>
             </ScrollShadow>
 
-            {/* Actions Footer */}
-            <div className="border-t bg-neutral-50 p-6">
+            <div className="border-t  p-6">
               <Button
                 className={`w-full ${
                   selectedOrder.status === "refunded" || selectedOrder.status === "cancelled"
@@ -660,7 +861,6 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Overlay */}
       {isDrawerOpen && (
         <div
           className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
@@ -668,18 +868,16 @@ export default function OrdersPage() {
         />
       )}
 
-      {/* Refund Modal */}
+      {/* Refund Modal - Same as before */}
       {isRefundModalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            {/* Modal Header */}
             <div className="px-6 py-4 border-b border-neutral-200">
               <h3 className="text-lg font-semibold text-neutral-900">
                 {refundSuccess ? "Refund processed" : "Issue refund"}
               </h3>
             </div>
 
-            {/* Modal Body */}
             <div className="px-6 py-6">
               {refundSuccess ? (
                 <div className="text-center py-6">
@@ -713,7 +911,7 @@ export default function OrdersPage() {
                         type="number"
                         value={refundAmount}
                         onChange={(e) => setRefundAmount(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm  rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
                         placeholder="0.00"
                         step="0.01"
                         max={Number(selectedOrder?.amount)}
@@ -731,7 +929,7 @@ export default function OrdersPage() {
                     <textarea
                       value={refundReason}
                       onChange={(e) => setRefundReason(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
+                      className="w-full px-3 py-2.5 text-sm  rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
                       placeholder="e.g., Customer requested, item damaged"
                       rows={3}
                     />
@@ -746,7 +944,6 @@ export default function OrdersPage() {
               )}
             </div>
 
-            {/* Modal Footer */}
             {!refundSuccess && (
               <div className="px-6 py-4 border-t border-neutral-200 flex justify-end gap-3">
                 <Button
@@ -756,7 +953,7 @@ export default function OrdersPage() {
                     setIsRefundModalOpen(false);
                     setRefundError(null);
                   }}
-                  className="border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                  className="border-neutral-200 text-neutral-700 hover:"
                 >
                   Cancel
                 </Button>
